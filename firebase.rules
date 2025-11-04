@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn();
+
+      allow create: if isSignedIn() &&
+        request.resource.data.keys().hasAll(['date','spot','licensePlate','name','userId','createdAt']) &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.spot in [1,2,3] &&
+        request.resource.data.licensePlate is string &&
+        request.resource.data.licensePlate.size() == 6 &&
+        request.resource.data.name is string &&
+        request.resource.data.name.size() > 0 &&
+        request.resource.data.date is string;
+
+      allow delete: if isSignedIn(); // Alla inloggade användare kan avboka
+
+      allow update: if false; // disallow updates
+    }
+  }
+}
+
+
