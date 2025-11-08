@@ -10,18 +10,19 @@
     </div>
 
     <div class="grid grid-cols-1 gap-3">
-      <div v-for="spot in [1,2,3]" :key="spot">
+      <div v-for="spot in [1,2,3]" :key="spot" class="grid grid-cols-[auto_1fr] gap-3 items-center">
+        <div class="font-semibold text-lg min-w-[80px]">Plats {{ spot }}</div>
+        
         <button
           v-if="!bookingMap[spot]"
           class="w-full p-6 rounded-lg bg-success text-white text-lg"
           @click="startBooking(spot)"
         >
-          Plats {{ spot }} – Ledig
+          Ledig
         </button>
 
         <div v-else class="w-full p-4 rounded-lg bg-gray-200 flex items-center justify-between">
           <div>
-            <div class="font-semibold">Plats {{ spot }}</div>
             <div class="text-gray-700 tracking-widest">{{ bookingMap[spot]?.licensePlate }}</div>
             <div class="text-gray-600 text-sm">{{ bookingMap[spot]?.name }}</div>
           </div>
