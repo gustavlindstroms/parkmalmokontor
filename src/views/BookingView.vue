@@ -40,14 +40,14 @@
       <div v-for="spot in [1,2,3]" :key="spot">
         <button
           v-if="!bookingMap[spot]"
-          class="w-full p-4 rounded-lg bg-success text-white flex items-center min-h-[108px]"
+          class="w-full p-4 rounded-lg bg-success text-white flex justify-between items-center min-h-[96px]"
           @click="startBooking(spot)"
         >
           <div class="font-semibold">Plats {{ spot }}</div>
-          <div class="flex-grow text-center text-lg">Ledig</div>
+          <div class="text-lg">Ledig</div>
         </button>
 
-        <div v-else class="w-full p-4 rounded-lg bg-gray-200 flex items-center justify-between min-h-[108px]">
+        <div v-else class="w-full p-4 rounded-lg bg-gray-200 flex items-center justify-between min-h-[96px]">
           <div>
             <div class="font-semibold">Plats {{ spot }}</div>
             <div class="text-gray-700 tracking-widest">{{ bookingMap[spot]?.licensePlate }}</div>
