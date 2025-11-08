@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Firebase configuration from environment variables
@@ -18,8 +18,10 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-export function signInAnon() {
-  return signInAnonymously(auth);
+const googleProvider = new GoogleAuthProvider();
+
+export function signInWithGoogle() {
+  return signInWithPopup(auth, googleProvider);
 }
 
 export function watchAuth(callback: (user: User | null) => void) {
