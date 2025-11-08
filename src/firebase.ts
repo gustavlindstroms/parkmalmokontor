@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, signInAnonymously, signOut, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 // Replace with your Firebase config if needed
@@ -25,4 +25,7 @@ export function watchAuth(callback: (user: User | null) => void) {
   return onAuthStateChanged(auth, callback);
 }
 
+export function signOutUser() {
+  return signOut(auth);
+}
 

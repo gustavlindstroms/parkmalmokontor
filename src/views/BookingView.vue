@@ -1,25 +1,52 @@
 <template>
   <div class="space-y-4">
-    <div class="flex items-center gap-3">
-      <label class="text-sm">Datum</label>
-      <input
-        type="date"
-        class="p-2 border rounded"
-        v-model="selectedDate"
-      />
+    <div class="flex items-center justify-center gap-2">
+      <button
+        type="button"
+        class="px-3 py-2 border rounded bg-gray-100 hover:bg-gray-200 transition"
+        @click="changeDateBy(-1)"
+      >
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      
+      <label for="date-picker" class="relative flex items-center gap-2 px-4 py-2 border rounded bg-white hover:bg-gray-50 transition cursor-pointer">
+        <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
+        </svg>
+        <span class="text-lg font-semibold">{{ formattedDateLabel }}</span>
+        <input
+          id="date-picker"
+          type="date"
+          class="absolute left-0 top-0 w-full h-full opacity-0 cursor-pointer"
+          v-model="selectedDate"
+        />
+      </label>
+
+      <button
+        type="button"
+        class="px-3 py-2 border rounded bg-gray-100 hover:bg-gray-200 transition"
+        @click="changeDateBy(1)"
+      >
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+        </svg>
+      </button>
     </div>
 
-    <div class="grid grid-cols-1 gap-3">
+    <div class="grid grid-cols-1 gap-4">
       <div v-for="spot in [1,2,3]" :key="spot">
         <button
           v-if="!bookingMap[spot]"
-          class="w-full p-6 rounded-lg bg-success text-white text-lg"
+          class="w-full p-4 rounded-lg bg-success text-white flex items-center min-h-[108px]"
           @click="startBooking(spot)"
         >
-          Plats {{ spot }} – Ledig
+          <div class="font-semibold">Plats {{ spot }}</div>
+          <div class="flex-grow text-center text-lg">Ledig</div>
         </button>
 
-        <div v-else class="w-full p-4 rounded-lg bg-gray-200 flex items-center justify-between">
+        <div v-else class="w-full p-4 rounded-lg bg-gray-200 flex items-center justify-between min-h-[108px]">
           <div>
             <div class="font-semibold">Plats {{ spot }}</div>
             <div class="text-gray-700 tracking-widest">{{ bookingMap[spot]?.licensePlate }}</div>
@@ -34,18 +61,6 @@
           </button>
         </div>
       </div>
-    </div>
-
-    <div class="pt-4 border-t border-gray-200 mt-6">
-      <a
-        href="https://kundportal.pmalmo.se/account?ReturnUrl=%2F"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex items-center justify-center gap-2 w-full p-3 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-gray-50 transition-colors"
-      >
-        <img src="/src/img/p_malmo_logo.png" alt="P-Malmö" class="h-6" />
-        <span class="text-sm font-medium text-gray-700">Till P-Malmös kundportal</span>
-      </a>
     </div>
 
     <div v-if="bookingSpot" class="fixed top-0 left-0 right-0 bottom-0 z-50 bg-black/50 flex items-center justify-center p-4 !mt-0">
@@ -114,7 +129,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import { db } from '../firebase';
 import {
   collection, query, where, onSnapshot,
@@ -124,8 +139,18 @@ import {
 
 const props = defineProps<{ userId: string }>();
 
-const selectedDate = ref<string>(new Date().toISOString().slice(0, 10));
+const weekdays = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+
+function formatDateInput(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const selectedDate = ref<string>(formatDateInput(new Date()));
 const bookingMap = ref<Record<number, { id: string; licensePlate: string; name: string; userId: string }>>({});
+const formattedDateLabel = computed(() => formatDateLabel(selectedDate.value));
 
 let unSub: (() => void) | null = null;
 
@@ -185,12 +210,34 @@ function validPlate(value: string) {
 
 function formatDateWithWeekday(dateStr: string): string {
   const date = new Date(dateStr + 'T00:00:00');
-  const weekdays = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
   const weekday = weekdays[date.getDay()];
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${weekday} ${year}-${month}-${day}`;
+}
+
+function getWeekNumber(date: Date): number {
+  const temp = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = temp.getUTCDay() || 7;
+  temp.setUTCDate(temp.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+  return Math.ceil((((temp.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function formatDateLabel(dateStr: string): string {
+  const date = new Date(dateStr + 'T00:00:00');
+  const weekday = weekdays[date.getDay()];
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const week = getWeekNumber(date);
+  return `${weekday} ${day}/${month} (vecka ${week})`;
+}
+
+function changeDateBy(days: number) {
+  const current = new Date(selectedDate.value + 'T00:00:00');
+  current.setDate(current.getDate() + days);
+  selectedDate.value = formatDateInput(current);
 }
 
 async function confirmBooking() {
@@ -216,13 +263,27 @@ async function confirmBooking() {
       where('date', '==', selectedDate.value),
       where('spot', '==', bookingSpot.value)
     );
-    const existingSnapshot = await getDocs(existingQuery);
+    const plateQuery = query(
+      collection(db, 'bookings'),
+      where('date', '==', selectedDate.value),
+      where('licensePlate', '==', plate)
+    );
+    const [existingSnapshot, plateSnapshot] = await Promise.all([
+      getDocs(existingQuery),
+      getDocs(plateQuery)
+    ]);
     
     if (!existingSnapshot.empty) {
       formError.value = 'Platsen är redan bokad. Vänligen välj en annan plats.';
       saving.value = false;
       // Behåll formuläret öppet så användaren kan se felmeddelandet och välja en annan plats
       // Formuläret stängs inte automatiskt - användaren kan klicka "Avbryt" när de vill
+      return;
+    }
+    
+    if (!plateSnapshot.empty) {
+      formError.value = 'Registreringsnumret är redan bokat den här dagen.';
+      saving.value = false;
       return;
     }
     
@@ -284,5 +345,3 @@ async function confirmCancel() {
 
 <style scoped>
 </style>
-
-
