@@ -15,7 +15,7 @@
         
         <button
           v-if="!bookingMap[spot]"
-          class="w-full p-6 rounded-lg bg-success text-white text-lg"
+          class="w-full p-6 rounded-lg bg-success text-white text-lg hover:bg-green-600 hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
           @click="startBooking(spot)"
         >
           Ledig
@@ -28,7 +28,7 @@
           </div>
           <button
             v-if="canCancel(spot)"
-            class="px-4 py-2 rounded bg-danger text-white"
+            class="px-4 py-2 rounded bg-danger text-white hover:bg-red-700 hover:shadow-lg transition-all duration-200 hover:scale-105"
             @click="showCancelConfirm(spot)"
           >
             Avboka
@@ -72,8 +72,8 @@
           </div>
         </div>
         <div class="flex gap-3">
-          <button class="flex-1 p-3 rounded bg-gray-200" @click="closeForm">Avbryt</button>
-          <button class="flex-1 p-3 rounded bg-blue-600 text-white disabled:opacity-50" :disabled="saving" @click="confirmBooking">
+          <button class="flex-1 p-3 rounded bg-gray-200 hover:bg-gray-300 hover:shadow-md transition-all duration-200" @click="closeForm">Avbryt</button>
+          <button class="flex-1 p-3 rounded bg-blue-600 text-white disabled:opacity-50 hover:bg-blue-700 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] disabled:hover:scale-100 disabled:hover:bg-blue-600" :disabled="saving" @click="confirmBooking">
             {{ saving ? 'Sparar...' : 'Boka' }}
           </button>
         </div>
@@ -95,8 +95,8 @@
           </div>
         </div>
         <div class="flex gap-3">
-          <button class="flex-1 p-3 rounded bg-gray-200" @click="closeCancelConfirm">Avbryt</button>
-          <button class="flex-1 p-3 rounded bg-red-600 text-white disabled:opacity-50" :disabled="cancelling" @click="confirmCancel">
+          <button class="flex-1 p-3 rounded bg-gray-200 hover:bg-gray-300 hover:shadow-md transition-all duration-200" @click="closeCancelConfirm">Avbryt</button>
+          <button class="flex-1 p-3 rounded bg-red-600 text-white disabled:opacity-50 hover:bg-red-700 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] disabled:hover:scale-100 disabled:hover:bg-red-600" :disabled="cancelling" @click="confirmCancel">
             {{ cancelling ? 'Avbokar...' : 'Ja, avboka' }}
           </button>
         </div>
