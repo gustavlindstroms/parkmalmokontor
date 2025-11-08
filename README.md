@@ -76,7 +76,155 @@ Kör TypeScript-kompilatorn för att kontrollera typfel utan att generera filer.
 
 ## Firebase-konfiguration
 
-Firebase-konfigurationen finns i `src/firebase.ts`. Projekt-ID: `pmalmo-31282`.
+Firebase-konfigurationen hanteras via miljövariabler för att separera utveckling och produktion.
+
+### Konfigurationsfiler
+
+Appen använder följande konfigurationsfiler:
+
+- **`.env.example`** - Mallfil med alla nödvändiga miljövariabler (committad till git)
+- **`.env`** - Lokal utvecklingskonfiguration (gitignored)
+- **`.env.production`** - Produktionskonfiguration (committad till git, eftersom Firebase-nycklar är publika)
+
+### Miljövariabler
+
+Appen kräver följande miljövariabler för Firebase-konfiguration:
+
+```bash
+FIREBASE_API_KEY=your-api-key
+FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=123456789
+FIREBASE_APP_ID=1:123456789:web:abc123
+```
+
+### Hur konfigurationen fungerar
+
+1. **Utveckling (`npm run dev`):**
+   - Vite läser `.env`-filen
+   - `vite.config.ts` använder `loadEnv()` för att ladda variabler
+   - Variabler injiceras via `define` i `vite.config.ts`
+   - Appen använder `import.meta.env.FIREBASE_*` för att komma åt värdena
+
+2. **Produktion (`npm run build`):**
+   - Vite läser `.env.production`-filen (eller systemets miljövariabler)
+   - Variabler injiceras vid build-tid och "bakas in" i de statiska filerna
+   - De byggda filerna i `dist/` innehåller de faktiska värdena (inte referenser)
+
+### Första gången du sätter upp:
+
+1. Kopiera `.env.example` till `.env` för lokal utveckling:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. Fyll i dina Firebase-värden i `.env`-filen (se "Sätta upp eget Firebase-projekt" nedan för hur du hämtar dessa)
+
+3. **Produktionskonfiguration:** `.env.production` är redan committad i repot med produktionsvärden. Om du behöver ändra den, redigera filen direkt.
+
+### Verifiera konfigurationen
+
+Efter att ha satt upp `.env`-filen, starta utvecklingsservern:
+
+```bash
+npm run dev
+```
+
+Om konfigurationen är korrekt kommer appen att:
+- Ladda utan fel i konsolen
+- Kunna logga in med lösenordet
+- Kunna läsa och skapa bokningar i Firestore
+
+### Projekt-ID
+
+Standard projekt-ID: `pmalmo-31282` (kan ändras via miljövariabler i `.env` eller `.env.production`).
+
+**Viktigt:** 
+- `.env` är gitignored (kommer inte committas)
+- `.env.example` och `.env.production` är committade till git
+- `.env.production` är committad eftersom Firebase-nycklar är publika (säkerheten kommer från Security Rules)
+- Vid build för produktion används `.env.production` automatiskt
+
+### Sätta upp eget Firebase-projekt
+
+Om du vill använda ditt eget Firebase-projekt, följ dessa steg:
+
+#### 1. Skapa Firebase-projekt
+
+1. Gå till [Firebase Console](https://console.firebase.google.com)
+2. Logga in med ditt Google-konto
+3. Klicka på "Add project" eller "Skapa projekt"
+4. Ange ett projektnamn (t.ex. "my-parking-booking")
+5. (Valfritt) Aktivera Google Analytics
+6. Klicka på "Create project" och vänta tills projektet är skapat
+
+#### 2. Aktivera Firestore Database
+
+1. I Firebase Console, klicka på "Firestore Database" i vänstermenyn
+2. Klicka på "Create database"
+3. Välj "Start in test mode" (du kommer lägga till säkerhetsregler senare)
+4. Välj en plats (välj en nära dina användare)
+5. Klicka på "Enable"
+
+#### 3. Aktivera Anonymous Authentication
+
+1. Klicka på "Authentication" i vänstermenyn
+2. Klicka på "Get started"
+3. Gå till fliken "Sign-in method"
+4. Klicka på "Anonymous"
+5. Aktivera "Enable"
+6. Klicka på "Save"
+
+#### 4. Hämta Firebase-konfiguration
+
+1. Klicka på kugghjulsikonen ⚙️ bredvid "Project Overview"
+2. Välj "Project settings"
+3. Scrolla ner till "Your apps" och klicka på webbikonen `</>`
+4. Registrera din app med ett smeknamn (t.ex. "Parking Booking App")
+5. Kopiera `firebaseConfig`-objektet
+
+Det ser ut så här:
+```javascript
+const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "1:123456789:web:abc123"
+};
+```
+
+#### 5. Uppdatera app-konfiguration
+
+Ersätt `firebaseConfig` i `src/firebase.ts` med din egen konfiguration:
+
+```typescript
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  // ... etc
+};
+```
+
+#### 6. Deploya Security Rules
+
+1. I Firebase Console, gå till "Firestore Database"
+2. Klicka på fliken "Rules"
+3. Kopiera innehållet från `firebase.rules` i projektet
+4. Klistra in i Firebase Console rules editor
+5. Klicka på "Publish"
+
+**Viktigt:** Utan att deploya reglerna kommer din databas antingen vara öppen för alla (om du startade i test mode) eller blockerad (om du startade i production mode).
+
+#### 7. Testa din setup
+
+1. Kör `npm run dev`
+2. Försök logga in med lösenordet
+3. Skapa en testbokning
+4. Kontrollera i Firebase Console → Firestore Database → Data att din bokning syns
 
 ### Firestore Security Rules
 
@@ -89,6 +237,26 @@ Nuvarande regler:
 - Endast inloggade användare kan skapa bokningar (med validering)
 - Alla inloggade användare kan radera bokningar
 - Uppdateringar är blockerade (bokningar är oföränderliga)
+
+### Vad är Firestore?
+
+Firestore är en NoSQL-dokumentdatabas från Firebase. Tänk på det som en JSON-databas i molnet:
+
+- **Collections** = mappar (t.ex. `bookings`)
+- **Documents** = filer i dessa mappar (varje bokning är ett dokument)
+- **Fields** = data i varje dokument (date, spot, licensePlate, etc.)
+
+I denna app lagras all bokningsdata i Firestore och synkas i realtid till alla anslutna användare.
+
+### Gratis tier
+
+Firebase Spark-plan (gratis) inkluderar:
+- 50K läsningar/dag
+- 20K skrivningar/dag
+- 20K raderingar/dag
+- 1 GB lagring
+
+Detta är vanligtvis tillräckligt för små interna appar. Om du behöver mer kan du uppgradera till Blaze-plan (betala per användning över gratisgränsen).
 
 ## Användning
 

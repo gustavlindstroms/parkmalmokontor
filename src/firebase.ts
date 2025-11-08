@@ -2,15 +2,16 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
-// Replace with your Firebase config if needed
+// Firebase configuration from environment variables
+// In development: uses .env
+// In production: uses .env.production (set during build)
 const firebaseConfig = {
-  apiKey: "AIzaSyDmGrwYGu48L1_QoVRbksMdOknVIWXeHPQ",
-  authDomain: "pmalmo-31282.firebaseapp.com",
-  projectId: "pmalmo-31282",
-  storageBucket: "pmalmo-31282.firebasestorage.app",
-  messagingSenderId: "988979240425",
-  appId: "1:988979240425:web:4538d553cd4ae7234dff78",
-  measurementId: "G-P6VC4YG2PX"
+  apiKey: import.meta.env.FIREBASE_API_KEY,
+  authDomain: import.meta.env.FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.FIREBASE_APP_ID,
 };
 
 const app = initializeApp(firebaseConfig);

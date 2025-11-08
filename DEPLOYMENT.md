@@ -62,13 +62,29 @@ Lösenordet `givemeinternet` ligger i frontend-koden. Detta är okej för en int
 
 ## 🚀 Deployment
 
+### Miljövariabler för produktion
+
+Innan du bygger för produktion, se till att du har `.env.production` med korrekta värden:
+
+```bash
+# Om du inte redan har .env.production
+cp .env.example .env.production
+# Redigera .env.production med produktionsvärden
+```
+
+**Alternativ för CI/CD:**
+- Sätt miljövariablerna i ditt CI/CD-system (GitHub Actions, GitLab CI, etc.)
+- Vite kommer automatiskt läsa dem under build-processen
+
+**Notera:** Eftersom Firebase API-nycklar är publika (säkerheten kommer från Security Rules), kan du välja att committa `.env.production` om du vill. Ta bort den från `.gitignore` i så fall.
+
 ### Bygga appen:
 
 ```bash
 npm run build
 ```
 
-Detta skapar en `dist/` mapp med optimerade statiska filer.
+Detta skapar en `dist/` mapp med optimerade statiska filer. Miljövariablerna från `.env.production` (eller systemets miljövariabler) är nu inbakade i de statiska filerna.
 
 ### Deploya till Firebase Hosting:
 
