@@ -16,15 +16,10 @@
       >
         {{ userInitials }}
       </div>
-      <svg
+      <ChevronDown
         class="w-4 h-4 text-gray-600 transition-transform"
         :class="{ 'rotate-180': menuOpen }"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-      </svg>
+      />
     </button>
     
     <div
@@ -36,21 +31,30 @@
         <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
       </div>
       <button
+        @click="handleManageCars"
+        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+      >
+        <Car class="w-4 h-4" />
+        Hantera bilar{{ carCount > 0 ? ` (${carCount})` : '' }}
+      </button>
+      <button
         @click="handleLogout"
         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
       >
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
+        <LogOut class="w-4 h-4" />
         Logga ut
       </button>
     </div>
+    <CarManagementModal v-if="showCarModal" :user="user" @close="showCarModal = false" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ChevronDown, LogOut, Car } from 'lucide-vue-next';
 import { signOut } from '../firebase';
+import { useCars } from '../composables/useCars';
+import CarManagementModal from './CarManagementModal.vue';
 import type { User } from 'firebase/auth';
 
 const props = defineProps<{
@@ -58,7 +62,11 @@ const props = defineProps<{
 }>();
 
 const menuOpen = ref(false);
+const showCarModal = ref(false);
 let clickOutsideHandler: ((event: MouseEvent) => void) | null = null;
+
+const { cars } = useCars(props.user.uid);
+const carCount = computed(() => cars.value.length);
 
 const userInitials = computed(() => {
   const name = props.user.displayName || props.user.email || '';
@@ -71,6 +79,11 @@ const userInitials = computed(() => {
 
 function toggleMenu() {
   menuOpen.value = !menuOpen.value;
+}
+
+function handleManageCars() {
+  menuOpen.value = false;
+  showCarModal.value = true;
 }
 
 async function handleLogout() {

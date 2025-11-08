@@ -22,6 +22,20 @@ service cloud.firestore {
 
       allow update: if false; // disallow updates
     }
+
+    match /cars/{carId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn(); // Users can list their own cars via query
+
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.licensePlate is string &&
+        request.resource.data.licensePlate.size() == 6;
+
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow update: if false; // disallow updates
+    }
   }
 }
 
