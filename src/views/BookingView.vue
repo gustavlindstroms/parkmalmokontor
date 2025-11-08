@@ -52,15 +52,6 @@
       <div class="bg-paper w-full max-w-md rounded-lg p-4 space-y-3 shadow-lg">
         <div class="font-semibold">Boka plats {{ bookingSpot }}</div>
         <div>
-          <label class="block text-sm text-gray-600 mb-1">Namn</label>
-          <input
-            v-model="name"
-            type="text"
-            class="w-full p-3 border rounded"
-            placeholder="Ditt namn"
-          />
-        </div>
-        <div>
           <label class="block text-sm text-gray-600 mb-1">Registreringsnummer</label>
           <input
             v-model="licensePlate"
@@ -114,15 +105,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import { db } from '../firebase';
 import {
   collection, query, where, onSnapshot,
   addDoc, serverTimestamp, deleteDoc, doc,
   getDocs
 } from 'firebase/firestore';
+import type { User } from 'firebase/auth';
 
-const props = defineProps<{ userId: string }>();
+const props = defineProps<{ user: User }>();
 
 const selectedDate = ref<string>(new Date().toISOString().slice(0, 10));
 const bookingMap = ref<Record<number, { id: string; licensePlate: string; name: string; userId: string }>>({});
@@ -150,7 +142,6 @@ onBeforeUnmount(() => { if (unSub) unSub(); });
 watch(selectedDate, bindRealtime);
 
 const bookingSpot = ref<number | null>(null);
-const name = ref<string>('');
 const licensePlate = ref<string>('');
 const formError = ref('');
 const saving = ref(false);
@@ -158,11 +149,11 @@ const saving = ref(false);
 const cancelSpot = ref<number | null>(null);
 const cancelling = ref(false);
 
+const userName = computed(() => props.user.displayName || props.user.email || 'Användare');
+
 onMounted(() => {
   const lastPlate = localStorage.getItem('lastLicensePlate');
   if (lastPlate) licensePlate.value = lastPlate;
-  const lastName = localStorage.getItem('lastName');
-  if (lastName) name.value = lastName;
 });
 
 function startBooking(spot: number) {
@@ -196,12 +187,7 @@ function formatDateWithWeekday(dateStr: string): string {
 async function confirmBooking() {
   formError.value = '';
   const plate = licensePlate.value.toUpperCase().trim();
-  const nameValue = name.value.trim();
   
-  if (!nameValue) {
-    formError.value = 'Namn krävs.';
-    return;
-  }
   if (!validPlate(plate)) {
     formError.value = 'Ogiltigt registreringsnummer.';
     return;
@@ -230,13 +216,12 @@ async function confirmBooking() {
     await addDoc(collection(db, 'bookings'), {
       date: selectedDate.value,
       spot: bookingSpot.value,
-      name: nameValue,
+      name: userName.value,
       licensePlate: plate,
-      userId: props.userId,
+      userId: props.user.uid,
       createdAt: serverTimestamp(),
     });
     localStorage.setItem('lastLicensePlate', plate);
-    localStorage.setItem('lastName', nameValue);
     closeForm();
   } catch (e: any) {
     console.error('Booking error:', e);

@@ -8,7 +8,7 @@
     </header>
     <section class="flex-1 p-4">
       <LoginView v-if="!user" @logged-in="onLoggedIn" />
-      <BookingView v-else :user-id="user.uid" />
+      <BookingView v-else :user="user" />
     </section>
     <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2">
       <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
