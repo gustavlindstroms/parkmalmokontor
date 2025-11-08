@@ -239,8 +239,8 @@ async function confirmBooking() {
 function canCancel(spot: number) {
   const booking = bookingMap.value[spot];
   if (!booking) return false;
-  // Alla inloggade användare kan avboka vilken bokning som helst
-  return true;
+  // Users can only cancel their own bookings
+  return booking.userId === props.user.uid;
 }
 
 function showCancelConfirm(spot: number) {
