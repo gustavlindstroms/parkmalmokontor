@@ -1,7 +1,10 @@
 <template>
   <main class="mx-auto max-w-md min-h-screen flex flex-col">
-    <header class="p-4 text-center font-semibold text-xl bg-paper text-black">
+    <header class="p-4 text-center font-semibold text-xl bg-paper text-black relative">
       Parkeringsbokning Malmö
+      <div v-if="user" class="absolute top-0 right-0 h-full flex items-center pr-4">
+        <UserMenu :user="user" />
+      </div>
     </header>
     <section class="flex-1 p-4">
       <LoginView v-if="!user" @logged-in="onLoggedIn" />
@@ -19,14 +22,16 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import LoginView from './views/LoginView.vue';
 import BookingView from './views/BookingView.vue';
+import UserMenu from './components/UserMenu.vue';
 import { watchAuth } from './firebase';
+import type { User } from 'firebase/auth';
 
-const user = ref<{ uid: string } | null>(null);
+const user = ref<User | null>(null);
 let unSub: (() => void) | null = null;
 
 onMounted(() => {
   unSub = watchAuth((u) => {
-    user.value = u ? { uid: u.uid } : null;
+    user.value = u;
   });
 });
 
