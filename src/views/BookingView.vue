@@ -11,12 +11,13 @@
         </svg>
       </button>
       
-      <label for="date-picker" class="relative flex items-center gap-2 px-4 py-2 border rounded bg-white hover:bg-gray-50 transition cursor-pointer">
+      <label @click="openDatePicker" for="date-picker" class="relative flex items-center gap-2 px-4 py-2 border rounded bg-white hover:bg-gray-50 transition cursor-pointer">
         <svg class="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" />
         </svg>
         <span class="text-lg font-semibold">{{ formattedDateLabel }}</span>
         <input
+          ref="dateInput"
           id="date-picker"
           type="date"
           class="absolute left-0 top-0 w-full h-full opacity-0 cursor-pointer"
@@ -149,10 +150,17 @@ function formatDateInput(date: Date): string {
 }
 
 const selectedDate = ref<string>(formatDateInput(new Date()));
+const dateInput = ref<HTMLInputElement | null>(null);
 const bookingMap = ref<Record<number, { id: string; licensePlate: string; name: string; userId: string }>>({});
 const formattedDateLabel = computed(() => formatDateLabel(selectedDate.value));
 
 let unSub: (() => void) | null = null;
+
+function openDatePicker() {
+  if (dateInput.value) {
+    dateInput.value.showPicker();
+  }
+}
 
 function bindRealtime() {
   if (unSub) unSub();
