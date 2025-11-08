@@ -1,51 +1,24 @@
 <template>
   <div class="space-y-4">
-    <div class="flex items-center gap-3">
-      <label class="text-sm">Datum</label>
-      <input
-        type="date"
-        class="p-2 border rounded"
-        v-model="selectedDate"
-      />
-    </div>
+    <DatePicker v-model="selectedDate" />
 
-    <div v-if="cars.length === 0" class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
-      <div class="flex items-start gap-2">
-        <AlertTriangle class="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-        <div>
-          <p class="text-blue-800 font-medium">Kom igång med din första bokning</p>
-          <p class="text-blue-700 text-sm mt-1">Lägg till din bil genom att gå till menyn och välja "Hantera bilar". När du har lagt till en bil kan du börja boka parkeringsplatser här.</p>
-        </div>
-      </div>
-    </div>
+    <EmptyState
+      v-if="cars.length === 0"
+      title="Kom igång med din första bokning"
+      message='Lägg till din bil genom att gå till menyn och välja "Hantera bilar". När du har lagt till en bil kan du börja boka parkeringsplatser här.'
+    />
 
     <div class="grid grid-cols-1 gap-3">
-      <div v-for="spot in [1,2,3]" :key="spot" class="grid grid-cols-[auto_1fr] gap-3 items-center">
-        <div class="font-semibold text-lg min-w-[80px]">Plats {{ spot }}</div>
-        
-        <button
-          v-if="!bookingMap[spot]"
-          class="w-full p-6 rounded-lg bg-success text-white text-lg hover:bg-green-600 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          @click="startBooking(spot)"
-          :disabled="cars.length === 0"
-        >
-          Ledig
-        </button>
-
-        <div v-else class="w-full p-4 rounded-lg bg-gray-200 flex items-center justify-between">
-          <div>
-            <div class="text-gray-700 tracking-widest">{{ bookingMap[spot]?.licensePlate }}</div>
-            <div class="text-gray-600 text-sm">{{ bookingMap[spot]?.name }}</div>
-          </div>
-          <button
-            v-if="canCancel(spot)"
-            class="px-4 py-2 rounded bg-danger text-white hover:bg-red-700 hover:shadow-lg transition-all duration-200 hover:scale-105"
-            @click="showCancelConfirm(spot)"
-          >
-            Avboka
-          </button>
-        </div>
-      </div>
+      <ParkingSpot
+        v-for="spot in [1,2,3]"
+        :key="spot"
+        :spot="spot"
+        :booking="bookingMap[spot]"
+        :can-cancel="canCancel(spot)"
+        :disabled="cars.length === 0"
+        @book="startBooking"
+        @cancel="showCancelConfirm"
+      />
     </div>
 
     <div class="pt-4 border-t border-gray-200 mt-6">
@@ -60,70 +33,28 @@
       </a>
     </div>
 
-    <div v-if="bookingSpot" class="fixed top-0 left-0 right-0 bottom-0 z-50 bg-black/50 flex items-center justify-center p-4 !mt-0">
-      <div class="bg-paper w-full max-w-md rounded-lg p-4 space-y-4 shadow-lg">
-        <div class="font-semibold text-lg">Boka plats {{ bookingSpot }}</div>
-        <div>
-          <label class="block text-sm text-gray-600 mb-3">Välj bil</label>
-          <div class="space-y-2">
-            <button
-              v-for="car in cars"
-              :key="car.id"
-              @click="handleCarSelect(car.id)"
-              :disabled="saving"
-              class="w-full p-4 rounded-lg border-2 transition-all duration-200 text-left disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="saving 
-                ? 'border-gray-200 bg-gray-100' 
-                : 'border-gray-200 bg-white hover:border-blue-600 hover:bg-blue-50 active:bg-blue-100'"
-            >
-              <div class="font-mono text-xl tracking-widest text-gray-800">
-                {{ car.licensePlate }}
-              </div>
-            </button>
-          </div>
-        </div>
-        <div v-if="formError" class="bg-red-50 border-2 border-red-300 rounded-lg p-4">
-          <div class="flex items-start gap-2">
-            <XCircle class="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-            <p class="text-red-800 font-medium">{{ formError }}</p>
-          </div>
-        </div>
-        <div class="pt-2">
-          <button class="w-full p-3 rounded bg-gray-200 hover:bg-gray-300 hover:shadow-md transition-all duration-200" @click="closeForm" :disabled="saving">
-            Avbryt
-          </button>
-        </div>
-      </div>
-    </div>
+    <BookingModal
+      :spot="bookingSpot"
+      :cars="cars"
+      :saving="saving"
+      :error="formError"
+      @select="handleCarSelect"
+      @close="closeForm"
+    />
 
-    <div v-if="cancelSpot" class="fixed top-0 left-0 right-0 bottom-0 z-50 bg-black/50 flex items-center justify-center p-4 !mt-0">
-      <div class="bg-paper w-full max-w-md rounded-lg p-4 space-y-3 shadow-lg">
-        <div class="font-semibold text-lg">Bekräfta avbokning</div>
-        <div class="space-y-2">
-          <p class="text-gray-700">Är du säker på att du vill avboka plats {{ cancelSpot }} {{ formatDateWithWeekday(selectedDate) }}?</p>
-          <div class="bg-gray-50 p-3 rounded">
-            <div class="text-sm text-gray-600">Datum</div>
-            <div class="font-semibold">{{ formatDateWithWeekday(selectedDate) }}</div>
-            <div class="text-sm text-gray-600 mt-2">Registreringsnummer</div>
-            <div class="font-semibold tracking-widest">{{ bookingMap[cancelSpot]?.licensePlate }}</div>
-            <div class="text-sm text-gray-600 mt-1">Namn</div>
-            <div class="font-semibold">{{ bookingMap[cancelSpot]?.name }}</div>
-          </div>
-        </div>
-        <div class="flex gap-3">
-          <button class="flex-1 p-3 rounded bg-gray-200 hover:bg-gray-300 hover:shadow-md transition-all duration-200" @click="closeCancelConfirm">Avbryt</button>
-          <button class="flex-1 p-3 rounded bg-red-600 text-white disabled:opacity-50 hover:bg-red-700 hover:shadow-lg transition-all duration-200 hover:scale-[1.02] disabled:hover:scale-100 disabled:hover:bg-red-600" :disabled="cancelling" @click="confirmCancel">
-            {{ cancelling ? 'Avbokar...' : 'Ja, avboka' }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <CancelConfirmModal
+      :spot="cancelSpot"
+      :booking="cancelSpot ? bookingMap[cancelSpot] : null"
+      :formatted-date="formatDateWithWeekday(selectedDate)"
+      :cancelling="cancelling"
+      @confirm="confirmCancel"
+      @cancel="closeCancelConfirm"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
-import { AlertTriangle, XCircle } from 'lucide-vue-next';
 import { db } from '../firebase';
 import {
   collection, query, where, onSnapshot,
@@ -132,6 +63,11 @@ import {
 } from 'firebase/firestore';
 import { useCars } from '../composables/useCars';
 import type { User } from 'firebase/auth';
+import DatePicker from '../components/DatePicker.vue';
+import EmptyState from '../components/EmptyState.vue';
+import ParkingSpot from '../components/ParkingSpot.vue';
+import BookingModal from '../components/BookingModal.vue';
+import CancelConfirmModal from '../components/CancelConfirmModal.vue';
 
 const props = defineProps<{ user: User }>();
 
