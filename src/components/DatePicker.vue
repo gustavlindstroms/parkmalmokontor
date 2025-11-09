@@ -12,17 +12,17 @@
     <!-- Mobile display: formatted date with weekday -->
     <div class="md:hidden relative">
       <div 
-        class="p-2 border rounded text-center min-w-[120px] cursor-pointer"
-        @click="() => mobileDateInputRef?.click()"
+        class="p-2 border rounded text-center min-w-[120px] cursor-pointer pointer-events-none"
       >
         <div class="font-medium">{{ formattedDateMobile }}</div>
       </div>
       <input
         ref="mobileDateInputRef"
         type="date"
-        class="absolute opacity-0 pointer-events-none"
+        class="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
         :value="displayDate"
         @input="handleDateInput($event)"
+        @click="handleInputClick"
       />
     </div>
     <!-- Desktop: native date input -->
@@ -104,6 +104,30 @@ function goToNext() {
     ? addDaysToString(displayDate.value, 7)  // Go to next week
     : addDaysToString(displayDate.value, 1); // Go to next day
   emit('update:modelValue', newDate);
+}
+
+function handleInputClick(event: Event) {
+  const input = event.target as HTMLInputElement;
+  
+  // On mobile, we need to ensure the input is focused and try showPicker if available
+  input.focus();
+  
+  // Try using showPicker API if available (modern browsers)
+  if ('showPicker' in HTMLInputElement.prototype && input.showPicker) {
+    try {
+      input.showPicker();
+    } catch (err) {
+      // Fallback: ensure click is handled
+      setTimeout(() => {
+        input.click();
+      }, 0);
+    }
+  } else {
+    // For browsers without showPicker, the click should work
+    setTimeout(() => {
+      input.click();
+    }, 0);
+  }
 }
 </script>
 
