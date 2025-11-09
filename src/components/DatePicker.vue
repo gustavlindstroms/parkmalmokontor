@@ -4,7 +4,7 @@
       type="button"
       class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[60px] relative z-10"
       @click="goToPrevious"
-      :disabled="isToday && !weekMode"
+      :disabled="isTodayComputed && !weekMode"
       :title="weekMode ? 'Föregående vecka' : 'Föregående dag'"
     >
       ←
@@ -45,8 +45,13 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { parseISO, startOfWeek, addDays, subDays, format, isToday as isTodayFn } from 'date-fns';
-import { sv } from 'date-fns/locale';
+import {
+  getWeekStartString,
+  isToday,
+  formatDateMobile,
+  addDaysToString,
+  subDaysToString,
+} from '../utils/dateUtils';
 
 const props = defineProps<{
   modelValue: string;
@@ -59,69 +64,46 @@ const emit = defineEmits<{
 
 const mobileDateInputRef = ref<HTMLInputElement | null>(null);
 
-// Get week start (Monday) for a given date string
-// Sunday belongs to the week that started on the previous Monday
-function getWeekStart(dateString: string): Date {
-  const date = parseISO(dateString);
-  const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
-  
-  if (dayOfWeek === 0) {
-    // If it's Sunday, go back 6 days to get to the Monday of that week
-    return subDays(date, 6);
-  } else {
-    // Otherwise, return the Monday of the current week
-    return startOfWeek(date, { weekStartsOn: 1 });
-  }
-}
-
 // Display date: Monday when in week mode, otherwise the selected date
 const displayDate = computed(() => {
   if (props.weekMode) {
-    const monday = getWeekStart(props.modelValue);
-    return format(monday, 'yyyy-MM-dd');
+    return getWeekStartString(props.modelValue);
   }
   return props.modelValue;
 });
 
-const isToday = computed(() => {
-  const date = parseISO(displayDate.value);
-  return isTodayFn(date);
+const isTodayComputed = computed(() => {
+  return isToday(displayDate.value);
 });
 
 // Format date for mobile display: "Mån 10 nov" (without dots)
 const formattedDateMobile = computed(() => {
-  const date = parseISO(displayDate.value);
-  const weekdayShort = format(date, 'EEE', { locale: sv });
-  const day = date.getDate();
-  const monthShort = format(date, 'MMM', { locale: sv }).replace(/\./g, '');
-  return `${weekdayShort} ${day} ${monthShort}`;
+  return formatDateMobile(displayDate.value);
 });
 
 function goToPrevious() {
-  const date = parseISO(displayDate.value);
   const newDate = props.weekMode 
-    ? subDays(date, 7)  // Go to previous week
-    : subDays(date, 1); // Go to previous day
-  emit('update:modelValue', format(newDate, 'yyyy-MM-dd'));
+    ? subDaysToString(displayDate.value, 7)  // Go to previous week
+    : subDaysToString(displayDate.value, 1); // Go to previous day
+  emit('update:modelValue', newDate);
 }
 
 function handleDateInput(event: Event) {
   const selectedDate = (event.target as HTMLInputElement).value;
   if (props.weekMode) {
     // In week mode, always use Monday of the selected week
-    const monday = getWeekStart(selectedDate);
-    emit('update:modelValue', format(monday, 'yyyy-MM-dd'));
+    const monday = getWeekStartString(selectedDate);
+    emit('update:modelValue', monday);
   } else {
     emit('update:modelValue', selectedDate);
   }
 }
 
 function goToNext() {
-  const date = parseISO(displayDate.value);
   const newDate = props.weekMode 
-    ? addDays(date, 7)  // Go to next week
-    : addDays(date, 1); // Go to next day
-  emit('update:modelValue', format(newDate, 'yyyy-MM-dd'));
+    ? addDaysToString(displayDate.value, 7)  // Go to next week
+    : addDaysToString(displayDate.value, 1); // Go to next day
+  emit('update:modelValue', newDate);
 }
 </script>
 

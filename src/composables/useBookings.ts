@@ -13,6 +13,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { useUser } from './useUser';
+import { getToday } from '../utils/dateUtils';
 
 export interface Booking {
   id: string;
@@ -138,7 +139,7 @@ export function useBookings() {
     if (unSub) unSub();
 
     loading.value = true;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getToday();
     const q = query(
       collection(db, 'bookings'),
       where('userId', '==', userId.value),

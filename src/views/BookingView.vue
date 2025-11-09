@@ -106,10 +106,11 @@ import DatePicker from '../components/DatePicker.vue';
 import EmptyState from '../components/EmptyState.vue';
 import ParkingSpot from '../components/ParkingSpot.vue';
 import BookingModal from '../components/BookingModal.vue';
+import { getToday, getWeekDates } from '../utils/dateUtils';
 
 const { userId } = useUser();
 
-const selectedDate = ref<string>(new Date().toISOString().slice(0, 10));
+const selectedDate = ref<string>(getToday());
 const windowWidth = ref<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
 // Use day view on mobile/tablet (< 1200px), week view on desktop (>= 1200px)
@@ -132,45 +133,9 @@ const {
   subscribeToDateRange,
 } = useBookings();
 
-// Get week start (Monday) for a given date
-function getWeekStart(dateString: string): Date {
-  const date = new Date(dateString + 'T00:00:00');
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
-  return new Date(date.setDate(diff));
-}
-
 // Get all dates in the week starting from Monday (excluding weekends)
 const weekDates = computed(() => {
-  const weekStart = getWeekStart(selectedDate.value);
-  const dates: Array<{ date: string; dayName: string; dateLabel: string; isToday: boolean }> = [];
-  const today = new Date().toISOString().slice(0, 10);
-  
-  for (let i = 0; i < 7; i++) {
-    const date = new Date(weekStart);
-    date.setDate(weekStart.getDate() + i);
-    const dayOfWeek = date.getDay();
-    
-    // Skip weekends (Saturday = 6, Sunday = 0)
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      continue;
-    }
-    
-    const dateStr = date.toISOString().slice(0, 10);
-    
-    const dayNames = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
-    const dayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
-    const dateLabel = date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }).replace(/\./g, '');
-    
-    dates.push({
-      date: dateStr,
-      dayName,
-      dateLabel,
-      isToday: dateStr === today
-    });
-  }
-  
-  return dates;
+  return getWeekDates(selectedDate.value);
 });
 
 function bindRealtime() {

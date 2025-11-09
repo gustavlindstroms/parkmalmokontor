@@ -49,6 +49,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useBookings, type Booking } from '../composables/useBookings';
 import EmptyState from '../components/EmptyState.vue';
+import { compareDateStrings, formatDateHeader, formatDateShort } from '../utils/dateUtils';
 
 const {
   bookings,
@@ -62,59 +63,12 @@ const cancellingBookings = ref<Set<string>>(new Set());
 const sortedBookings = computed(() => {
   return [...bookings.value].sort((a, b) => {
     // First sort by date
-    const dateCompare = a.date.localeCompare(b.date);
+    const dateCompare = compareDateStrings(a.date, b.date);
     if (dateCompare !== 0) return dateCompare;
     // Then by spot number
     return a.spot - b.spot;
   });
 });
-
-function formatDateHeader(dateString: string): string {
-  const date = new Date(dateString + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dateOnly = new Date(date);
-  dateOnly.setHours(0, 0, 0, 0);
-  
-  if (dateOnly.getTime() === today.getTime()) {
-    return 'Idag';
-  } else if (dateOnly.getTime() === tomorrow.getTime()) {
-    return 'Imorgon';
-  }
-  
-  const dateStr = date.toLocaleDateString('sv-SE', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-  
-  // Capitalize first letter
-  return dateStr.charAt(0).toUpperCase() + dateStr.slice(1);
-}
-
-function formatDateShort(dateString: string): string {
-  const date = new Date(dateString + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const dateOnly = new Date(date);
-  dateOnly.setHours(0, 0, 0, 0);
-  
-  if (dateOnly.getTime() === today.getTime()) {
-    return 'Idag';
-  } else if (dateOnly.getTime() === tomorrow.getTime()) {
-    return 'Imorgon';
-  }
-  
-  return date.toLocaleDateString('sv-SE', {
-    day: 'numeric',
-    month: 'short',
-  }).replace(/\./g, '');
-}
 
 function confirmCancel(booking: Booking) {
   if (!confirm(`Är du säker på att du vill avboka plats ${booking.spot} för ${formatDateHeader(booking.date)}?`)) {
