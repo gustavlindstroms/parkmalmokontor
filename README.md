@@ -9,7 +9,7 @@ Denna app hjälper Forefront-anställda att boka parkeringsplatser i förväg f�
 ### Hur det fungerar
 
 1. **Förbokning (denna app):**
-   - Användare loggar in med lösenord och bokar en ledig plats för ett specifikt datum
+   - Användare loggar in med Google och bokar en ledig plats för ett specifikt datum
    - Alla kan se vem som har bokat vilken plats och när
    - Realtidsuppdateringar så att alla ser samma information
 
@@ -29,7 +29,7 @@ Denna app hjälper Forefront-anställda att boka parkeringsplatser i förväg f�
 
 ## Funktioner
 
-- ✅ Anonym inloggning via Firebase
+- ✅ Google-inloggning via Firebase Authentication
 - ✅ Realtidsöversikt över bokningar för alla tre platser
 - ✅ Datumväljare för att se bokningar för specifika datum
 - ✅ Bokning med namn och registreringsnummer (6 tecken, A-Z/0-9)
@@ -133,12 +133,12 @@ npm run dev
 
 Om konfigurationen är korrekt kommer appen att:
 - Ladda utan fel i konsolen
-- Kunna logga in med lösenordet
+- Kunna logga in med Google
 - Kunna läsa och skapa bokningar i Firestore
 
 ### Projekt-ID
 
-Standard projekt-ID: `pmalmo-31282` (kan ändras via miljövariabler i `.env` eller `.env.production`).
+Projekt-ID:t konfigureras via miljövariabler i `.env` eller `.env.production`.
 
 **Viktigt:** 
 - `.env` är gitignored (kommer inte committas)
@@ -222,7 +222,7 @@ const firebaseConfig = {
 #### 7. Testa din setup
 
 1. Kör `npm run dev`
-2. Försök logga in med lösenordet
+2. Försök logga in med Google
 3. Skapa en testbokning
 4. Kontrollera i Firebase Console → Firestore Database → Data att din bokning syns
 
@@ -260,7 +260,7 @@ Detta är vanligtvis tillräckligt för små interna appar. Om du behöver mer k
 
 ## Användning
 
-1. **Logga in:** Ange lösenordet `givemeinternet`
+1. **Logga in:** Klicka på "Logga in med Google" och välj ditt Google-konto
 2. **Välj datum:** Använd datumväljaren för att se bokningar för ett specifikt datum
 3. **Boka plats:** Klicka på en ledig plats, ange namn och registreringsnummer (6 tecken)
 4. **Avboka:** Klicka på "Avboka" för en bokad plats (alla inloggade användare kan avboka)
@@ -279,8 +279,226 @@ src/
       └── BookingView.vue  # Huvudvy för bokningar
 ```
 
-## Deployment
+## 🔒 Säkerhet
 
-Se `DEPLOYMENT.md` för detaljerad information om deployment och säkerhet.
+### Firestore Security Rules
+
+**VIKTIGT:** Dina Security Rules måste deployas i Firebase Console för att skydda din databas!
+
+#### Steg för att deploya Security Rules:
+
+1. **Gå till Firebase Console:**
+   - https://console.firebase.google.com
+   - Välj ditt projekt
+
+2. **Navigera till Firestore:**
+   - Välj **Firestore Database** i menyn
+   - Klicka på fliken **Rules**
+
+3. **Kopiera reglerna:**
+   - Öppna filen `firebase.rules` i projektet
+   - Kopiera hela innehållet
+
+4. **Klistra in och publicera:**
+   - Klistra in reglerna i Firebase Console
+   - Klicka på **Publish**
+
+#### Din nuvarande säkerhet:
+
+✅ **Endast inloggade användare** kan:
+- Läsa bokningar
+- Skapa bokningar (med validering)
+- Radera bokningar
+
+✅ **Ingen kan:**
+- Uppdatera bokningar (update är blockerad)
+- Skapa bokningar utan korrekt struktur
+- Skapa bokningar med felaktiga värden
+
+### Firebase API-nycklar
+
+**Normal att vara öppna:** Firebase API-nycklar är menade att vara publika i frontend-kod. De identifierar ditt projekt, inte autentiserar. Säkerheten kommer från Security Rules.
+
+### Google-inloggning
+
+Appen använder Google Sign-In via Firebase Authentication. Detta ger:
+
+- ✅ Säker autentisering via Google-konton
+- ✅ Ingen lösenordshantering i appen
+- ✅ Användare identifieras via sina Google-konton
+
+**För extra säkerhet kan du:**
+
+1. **Begränsa till specifika domäner:** Konfigurera Firebase Authentication att endast tillåta konton från specifika domäner (t.ex. `@forefront.se`)
+2. **Använda Firebase App Check:** För extra skydd mot bot-attacker
+3. **Konfigurera OAuth-omfång:** Begränsa vilken information som hämtas från Google-konton
+
+### Ytterligare säkerhetsförbättringar (valfritt):
+
+1. **Firebase App Check:**
+   - Skyddar mot bot-attacker och missbruk
+   - Aktivera i Firebase Console → App Check
+
+2. **Rate Limiting:**
+   - Lägg till begränsningar i Security Rules för att förhindra spam
+
+3. **IP-begränsning:**
+   - Använd Firebase Hosting rules eller Cloud Functions för IP-filtrering
+
+## 🚀 Deployment
+
+### Multi-Environment Setup (Dev & Prod)
+
+Appen stödjer deployment till separata dev- och prod-miljöer. Detta gör det möjligt att testa ändringar i en dev-miljö innan de deployas till produktion.
+
+#### 1. Skapa Firebase-projekt för dev och prod
+
+1. **Skapa dev-projekt:**
+   - Gå till https://console.firebase.google.com
+   - Klicka på "Add project" eller "Create a project"
+   - Välj ett lämpligt projektnamn (t.ex. "my-app-dev")
+   - Notera projekt-ID:t
+
+2. **Skapa prod-projekt (eller använd befintligt):**
+   - Samma process som ovan
+   - Välj ett lämpligt projektnamn (t.ex. "my-app-prod")
+   - Notera projekt-ID:t
+
+#### 2. Konfigurera miljövariabler
+
+1. **Skapa `.env` för dev-miljön (lokal utveckling):**
+   ```bash
+   # Fyll i dina dev Firebase-värden
+   FIREBASE_API_KEY=your-dev-api-key
+   FIREBASE_AUTH_DOMAIN=your-dev-project.firebaseapp.com
+   FIREBASE_PROJECT_ID=your-dev-project-id
+   FIREBASE_STORAGE_BUCKET=your-dev-project.appspot.com
+   FIREBASE_MESSAGING_SENDER_ID=123456789
+   FIREBASE_APP_ID=1:123456789:web:abc123
+   ```
+
+2. **Skapa `.env.production` för prod-miljön:**
+   ```bash
+   # Fyll i dina prod Firebase-värden
+   FIREBASE_API_KEY=your-prod-api-key
+   FIREBASE_AUTH_DOMAIN=your-prod-project.firebaseapp.com
+   FIREBASE_PROJECT_ID=your-prod-project-id
+   FIREBASE_STORAGE_BUCKET=your-prod-project.appspot.com
+   FIREBASE_MESSAGING_SENDER_ID=123456789
+   FIREBASE_APP_ID=1:123456789:web:abc123
+   ```
+
+**Notera:** 
+- `.env` är gitignored och används för lokal utveckling och dev-deployments
+- Du kan välja att committa `.env.production` om du vill, eftersom Firebase API-nycklar är publika (säkerheten kommer från Security Rules)
+- Projekt-ID:t läses automatiskt från `.env` (för dev) eller `.env.production` (för prod)
+
+#### 3. Initiera Firebase Hosting (första gången)
+
+```bash
+# Installera Firebase CLI (en gång)
+npm install -g firebase-tools
+
+# Logga in
+firebase login
+
+# Initiera hosting (första gången - körs en gång per projekt)
+firebase init hosting --project <your-dev-project-id>
+# Välj: dist som public directory
+# Välj: Yes för single-page app
+
+firebase init hosting --project <your-prod-project-id>
+# Välj: dist som public directory
+# Välj: Yes för single-page app
+```
+
+**Notera:** 
+- `firebase.json` är redan konfigurerad med hosting-inställningar, så du kan hoppa över init-steget om du vill.
+- Projekt-ID:t läses automatiskt från `.env` (för dev) eller `.env.production` (för prod) - du behöver **inte** skapa `.firebaserc`.
+
+#### 4. Deploya Security Rules till båda miljöerna
+
+**Till dev (använd projekt-ID från `.env`):**
+```bash
+# Hämta projekt-ID från .env och använd det direkt
+firebase deploy --only firestore:rules --project $(grep FIREBASE_PROJECT_ID .env | cut -d '=' -f2)
+```
+
+**Till prod (använd projekt-ID från `.env.production`):**
+```bash
+firebase deploy --only firestore:rules --project $(grep FIREBASE_PROJECT_ID .env.production | cut -d '=' -f2)
+```
+
+**Alternativ:** Använd `npm run deploy:dev:all` eller `npm run deploy:prod:all` som deployar både hosting och rules.
+
+Eller manuellt via Firebase Console (se säkerhetssektionen ovan).
+
+### Deployment-kommandon
+
+#### Deploya till dev-miljön:
+
+```bash
+# Bygg och deploya endast hosting till dev
+npm run deploy:dev
+
+# Bygg och deploya hosting + Firestore rules till dev
+npm run deploy:dev:all
+```
+
+#### Deploya till prod-miljön:
+
+```bash
+# Bygg och deploya endast hosting till prod
+npm run deploy:prod
+
+# Bygg och deploya hosting + Firestore rules till prod
+npm run deploy:prod:all
+```
+
+#### Manuella build-kommandon:
+
+```bash
+# Bygg för dev
+npm run build:dev
+
+# Bygg för prod
+npm run build:prod
+
+# Bygg med standard mode (production)
+npm run build
+```
+
+### Legacy Deployment (utan miljöseparering)
+
+Om du bara vill deploya till ett projekt utan miljöseparering:
+
+```bash
+# Bygg appen
+npm run build
+
+# Deploya med projekt-ID från .env.production (eller ange projekt-ID direkt)
+firebase deploy --only hosting --project $(grep FIREBASE_PROJECT_ID .env.production | cut -d '=' -f2)
+```
+
+### Andra alternativ:
+
+- **Netlify:** Dra och släpp `dist/` mappen
+- **Vercel:** `vercel --prod`
+- **Egen webbserver:** Ladda upp innehållet i `dist/` till din server
+
+### Miljövariabler för CI/CD
+
+**Alternativ för CI/CD:**
+- Sätt miljövariablerna i ditt CI/CD-system (GitHub Actions, GitLab CI, etc.)
+- Vite kommer automatiskt läsa dem under build-processen baserat på `--mode` flaggan
+- Använd `npm run build:dev` eller `npm run build:prod` i ditt CI/CD-flöde
+
+## ✅ Checklista före deployment:
+
+- [ ] Deploya Firestore Security Rules i Firebase Console
+- [ ] Verifiera att Google Sign-In är aktiverat i Firebase Console (Authentication → Sign-in method → Google)
+- [ ] Testa att Google-inloggning fungerar efter deployment
+- [ ] Testa att bokningar skapas och raderas korrekt
+- [ ] Verifiera att Security Rules blockerar otillåtna operationer
 
 
