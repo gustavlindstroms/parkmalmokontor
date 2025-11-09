@@ -46,7 +46,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
+import { ref, watch, onMounted, onBeforeUnmount, computed, inject } from 'vue';
 import { db } from '../firebase';
 import {
   collection, query, where, onSnapshot,
@@ -60,7 +60,18 @@ import EmptyState from '../components/EmptyState.vue';
 import ParkingSpot from '../components/ParkingSpot.vue';
 import BookingModal from '../components/BookingModal.vue';
 
-const props = defineProps<{ user: User }>();
+const user = inject<{ value: User | null }>('user');
+if (!user) {
+  throw new Error('User is required');
+}
+
+// Use computed to reactively access user
+const userValue = computed(() => {
+  if (!user.value) {
+    throw new Error('User is required');
+  }
+  return user.value;
+});
 
 const selectedDate = ref<string>(new Date().toISOString().slice(0, 10));
 const bookingMap = ref<Record<number, { id: string; licensePlate: string; name: string; userId: string }>>({});
@@ -68,7 +79,7 @@ const bookingMap = ref<Record<number, { id: string; licensePlate: string; name: 
 let unSub: (() => void) | null = null;
 
 // Car management
-const { cars, loading: carsLoading } = useCars(props.user.uid);
+const { cars, loading: carsLoading } = useCars(userValue.value.uid);
 const selectedCarId = ref<string>('');
 
 function bindRealtime() {
@@ -98,7 +109,7 @@ const saving = ref(false);
 const cancelling = ref(false);
 const cancelledBookingCache = ref<Record<number, { id: string; licensePlate: string; name: string; userId: string }>>({});
 
-const userName = computed(() => props.user.displayName || props.user.email || 'Användare');
+const userName = computed(() => userValue.value.displayName || userValue.value.email || 'Användare');
 
 // Merge bookingMap with cancelled bookings that are still animating
 const displayBookingMap = computed(() => {
@@ -184,7 +195,7 @@ async function confirmBooking(spot?: number, directBooking = false) {
       spot: targetSpot,
       name: userName.value,
       licensePlate: plate,
-      userId: props.user.uid,
+      userId: userValue.value.uid,
       createdAt: serverTimestamp(),
     });
     
@@ -215,7 +226,7 @@ function canCancel(spot: number) {
   const booking = displayBookingMap.value[spot];
   if (!booking) return false;
   // Users can only cancel their own bookings
-  return booking.userId === props.user.uid;
+  return booking.userId === userValue.value.uid;
 }
 
 function confirmCancel(spot: number) {

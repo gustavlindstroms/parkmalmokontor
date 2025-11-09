@@ -8,7 +8,7 @@
     </header>
     <section class="flex-1 p-4">
       <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
-      <BookingView v-else-if="!authLoading && user" :user="user" />
+      <router-view v-else-if="!authLoading && user" />
     </section>
     <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2">
       <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
@@ -19,9 +19,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, provide } from 'vue';
 import LoginView from './views/LoginView.vue';
-import BookingView from './views/BookingView.vue';
 import UserMenu from './components/UserMenu.vue';
 import { watchAuth } from './firebase';
 import type { User } from 'firebase/auth';
@@ -36,6 +35,9 @@ onMounted(() => {
     authLoading.value = false;
   });
 });
+
+// Provide user to child components
+provide('user', user);
 
 onBeforeUnmount(() => {
   if (unSub) unSub();

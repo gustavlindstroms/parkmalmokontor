@@ -31,6 +31,13 @@
         <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
       </div>
       <button
+        @click="handleViewBookings"
+        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+      >
+        <Calendar class="w-4 h-4" />
+        Mina bokningar
+      </button>
+      <button
         @click="handleManageCars"
         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
       >
@@ -51,7 +58,8 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
-import { ChevronDown, LogOut, Car } from 'lucide-vue-next';
+import { useRouter } from 'vue-router';
+import { ChevronDown, LogOut, Car, Calendar } from 'lucide-vue-next';
 import { signOut } from '../firebase';
 import { useCars } from '../composables/useCars';
 import CarManagementModal from './CarManagementModal.vue';
@@ -61,6 +69,7 @@ const props = defineProps<{
   user: User;
 }>();
 
+const router = useRouter();
 const menuOpen = ref(false);
 const showCarModal = ref(false);
 let clickOutsideHandler: ((event: MouseEvent) => void) | null = null;
@@ -79,6 +88,11 @@ const userInitials = computed(() => {
 
 function toggleMenu() {
   menuOpen.value = !menuOpen.value;
+}
+
+function handleViewBookings() {
+  menuOpen.value = false;
+  router.push('/bookings');
 }
 
 function handleManageCars() {
