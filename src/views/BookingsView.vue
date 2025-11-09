@@ -19,37 +19,24 @@
         class="grid grid-cols-[auto_1fr] gap-3 items-center"
       >
         <div class="font-semibold text-lg min-w-[80px]">{{ formatDateShort(booking.date) }}</div>
-        <div 
-          class="w-full p-4 rounded-lg flex items-center justify-between booking-card"
-          :class="{
-            'cancelled-animation': cancellingBookings.has(booking.id)
-          }"
-        >
-          <div>
-            <div class="text-gray-700 tracking-widest">{{ booking.licensePlate }}</div>
-            <div class="text-gray-600 text-sm">{{ booking.name }}</div>
-          </div>
-          <button
-            v-if="!cancellingBookings.has(booking.id)"
-            class="px-4 py-2 rounded bg-danger text-white hover:bg-red-700 hover:shadow-lg transition-all duration-200 hover:scale-105"
-            @click="confirmCancel(booking)"
-          >
-            Avboka
-          </button>
-          <div v-else class="px-4 py-2 text-sm text-gray-400">
-            Avbokar...
-          </div>
-        </div>
+        <ParkingSpot
+          :spot="booking.spot"
+          :booking="{ licensePlate: booking.licensePlate, name: booking.name }"
+          :can-cancel="true"
+          :disabled="false"
+          @cancel="() => doCancel(booking)"
+        />
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { computed, onMounted } from 'vue';
 import { useBookings, type Booking } from '../composables/useBookings';
 import EmptyState from '../components/EmptyState.vue';
-import { compareDateStrings, formatDateHeader, formatDateShort } from '../utils/dateUtils';
+import ParkingSpot from '../components/ParkingSpot.vue';
+import { compareDateStrings, formatDateShort } from '../utils/dateUtils';
 
 const {
   bookings,
@@ -57,8 +44,6 @@ const {
   subscribeToUserBookings,
   cancelBooking,
 } = useBookings();
-
-const cancellingBookings = ref<Set<string>>(new Set());
 
 const sortedBookings = computed(() => {
   return [...bookings.value].sort((a, b) => {
@@ -70,30 +55,13 @@ const sortedBookings = computed(() => {
   });
 });
 
-function confirmCancel(booking: Booking) {
-  if (!confirm(`Är du säker på att du vill avboka plats ${booking.spot} för ${formatDateHeader(booking.date)}?`)) {
-    return;
-  }
-  doCancel(booking);
-}
-
 async function doCancel(booking: Booking) {
-  cancellingBookings.value.add(booking.id);
-  
-  // Trigger animation
-  setTimeout(() => {
-    // Animation will continue even after deletion
-  }, 1000);
-  
   try {
     await cancelBooking(booking.id);
   } catch (e) {
     console.error('Error cancelling booking:', e);
     alert('Kunde inte avboka. Försök igen.');
-    cancellingBookings.value.delete(booking.id);
   }
-  // Note: We don't remove from cancellingBookings here because the booking will be removed from the list
-  // when Firestore updates, so the component will unmount
 }
 
 onMounted(() => {
@@ -101,31 +69,4 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-@keyframes cancelled {
-  0% {
-    box-shadow: 0 0 0 0 rgba(201, 29, 37, 0.7);
-    outline: 2px solid transparent;
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(201, 29, 37, 0);
-    outline: 2px solid #C91D25;
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(201, 29, 37, 0);
-    outline: 2px solid transparent;
-  }
-}
-
-.booking-card {
-  background-color: #e5e7eb; /* bg-gray-200 */
-  transition: background-color 0.4s ease-out;
-  outline-offset: -2px;
-}
-
-.cancelled-animation {
-  animation: cancelled 0.6s ease-out;
-  outline: 2px solid transparent;
-}
-</style>
 
