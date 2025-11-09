@@ -7,8 +7,8 @@
       </div>
     </header>
     <section class="flex-1 p-4">
-      <LoginView v-if="!user" @logged-in="onLoggedIn" />
-      <BookingView v-else :user="user" />
+      <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
+      <BookingView v-else-if="!authLoading && user" :user="user" />
     </section>
     <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2">
       <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
@@ -27,11 +27,13 @@ import { watchAuth } from './firebase';
 import type { User } from 'firebase/auth';
 
 const user = ref<User | null>(null);
+const authLoading = ref(true);
 let unSub: (() => void) | null = null;
 
 onMounted(() => {
   unSub = watchAuth((u) => {
     user.value = u;
+    authLoading.value = false;
   });
 });
 

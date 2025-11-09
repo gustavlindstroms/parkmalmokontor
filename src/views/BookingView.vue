@@ -3,7 +3,7 @@
     <DatePicker v-model="selectedDate" />
 
     <EmptyState
-      v-if="cars.length === 0"
+      v-if="!carsLoading && cars.length === 0"
       title="Kom igång med din första bokning"
       message='Lägg till din bil genom att gå till menyn och välja "Hantera bilar". När du har lagt till en bil kan du börja boka parkeringsplatser här.'
     />
@@ -68,7 +68,7 @@ const bookingMap = ref<Record<number, { id: string; licensePlate: string; name: 
 let unSub: (() => void) | null = null;
 
 // Car management
-const { cars } = useCars(props.user.uid);
+const { cars, loading: carsLoading } = useCars(props.user.uid);
 const selectedCarId = ref<string>('');
 
 function bindRealtime() {

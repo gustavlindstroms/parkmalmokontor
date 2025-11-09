@@ -97,15 +97,15 @@ function handleCancel() {
 
 @keyframes cancelled {
   0% {
-    box-shadow: 0 0 0 0 rgba(115, 178, 52, 0.7);
+    box-shadow: 0 0 0 0 rgba(201, 29, 37, 0.7);
     outline: 2px solid transparent;
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(115, 178, 52, 0);
-    outline: 2px solid #73B234;
+    box-shadow: 0 0 0 10px rgba(201, 29, 37, 0);
+    outline: 2px solid #C91D25;
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(115, 178, 52, 0);
+    box-shadow: 0 0 0 0 rgba(201, 29, 37, 0);
     outline: 2px solid transparent;
   }
 }
@@ -123,7 +123,6 @@ function handleCancel() {
 
 .cancelled-animation {
   animation: cancelled 0.6s ease-out;
-  background-color: #d4edda;
   outline: 2px solid transparent;
 }
 </style>
