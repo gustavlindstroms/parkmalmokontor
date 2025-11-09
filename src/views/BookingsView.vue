@@ -1,6 +1,6 @@
 <template>
-  <div class="space-y-4 max-w-md md:max-w-2xl mx-auto">
-    <h1 class="text-2xl font-semibold">Mina framtida bokningar</h1>
+  <div class="space-y-4 md:max-w-2xl md:mx-auto">
+    <h1 class="text-2xl font-semibold">Mina bokningar</h1>
 
     <div v-if="loading" class="text-center py-8 text-gray-500">
       Laddar bokningar...

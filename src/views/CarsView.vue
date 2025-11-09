@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4 max-w-md md:max-w-2xl mx-auto">
+  <div class="space-y-4 md:max-w-2xl md:mx-auto">
     <h1 class="font-semibold text-xl">Mina bilar</h1>
 
     <!-- Add Car Form -->
