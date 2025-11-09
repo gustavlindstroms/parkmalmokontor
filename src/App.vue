@@ -1,21 +1,37 @@
 <template>
-  <main class="mx-auto max-w-md min-h-screen flex flex-col">
-    <header class="p-4 text-center font-semibold text-xl bg-paper text-black relative">
-      Parkeringsbokning Malmö
-      <div v-if="user" class="absolute top-0 right-0 h-full flex items-center pr-4">
-        <UserMenu :user="user" />
+  <div class="min-h-screen flex">
+    <!-- Sidebar for larger viewports -->
+    <aside v-if="user && !authLoading" class="hidden md:flex md:flex-col md:w-64 md:bg-paper md:border-r md:border-gray-200 md:min-h-screen">
+      <div class="p-4 border-b border-gray-200">
+        <h1 class="font-semibold text-lg text-black">Parkeringsbokning Malmö</h1>
       </div>
-    </header>
-    <section class="flex-1 p-4">
-      <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
-      <router-view v-else-if="!authLoading && user" />
-    </section>
-    <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2">
-      <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
-      <span>© 2025</span>
-    </footer>
-  </main>
-  
+      <div class="flex-1 p-4">
+        <UserMenu :user="user" :sidebar-mode="true" />
+      </div>
+      <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2 border-t border-gray-200">
+        <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
+        <span>© 2025</span>
+      </footer>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="flex-1 mx-auto max-w-md md:max-w-2xl md:mt-8 min-h-screen flex flex-col">
+      <header class="p-4 text-center font-semibold text-xl bg-paper text-black relative md:hidden">
+        Parkeringsbokning Malmö
+        <div v-if="user" class="absolute top-0 right-0 h-full flex items-center pr-4">
+          <UserMenu :user="user" :sidebar-mode="false" />
+        </div>
+      </header>
+      <section class="flex-1 p-4">
+        <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
+        <router-view v-else-if="!authLoading && user" />
+      </section>
+      <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2 md:hidden">
+        <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
+        <span>© 2025</span>
+      </footer>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">

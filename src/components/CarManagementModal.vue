@@ -44,7 +44,7 @@
       <!-- Cars List -->
       <div>
         <h3 class="text-sm font-medium text-gray-700 mb-3">
-          Dina bilar ({{ cars.length }})
+          Mina bilar
         </h3>
         <div v-if="loading" class="text-center py-8 text-gray-500">
           Laddar...
