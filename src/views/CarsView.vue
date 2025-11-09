@@ -66,25 +66,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject, computed } from 'vue';
+import { ref } from 'vue';
 import { XCircle } from 'lucide-vue-next';
 import { useCars } from '../composables/useCars';
-import type { User } from 'firebase/auth';
+import { useUser } from '../composables/useUser';
 
-const user = inject<{ value: User | null }>('user');
-if (!user) {
-  throw new Error('User is required');
-}
+const { userId } = useUser();
 
-// Use computed to reactively access user
-const userValue = computed(() => {
-  if (!user.value) {
-    throw new Error('User is required');
-  }
-  return user.value;
-});
-
-const { cars, loading, addCar, removeCar } = useCars(userValue.value.uid);
+const { cars, loading, addCar, removeCar } = useCars(userId.value);
 
 const newPlate = ref('');
 const adding = ref(false);

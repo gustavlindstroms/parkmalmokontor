@@ -98,47 +98,39 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onBeforeUnmount, computed, inject } from 'vue';
-import { db } from '../firebase';
-import {
-  collection, query, where, onSnapshot,
-  addDoc, serverTimestamp, deleteDoc, doc,
-  getDocs
-} from 'firebase/firestore';
+import { ref, watch, onMounted, onBeforeUnmount, computed } from 'vue';
 import { useCars } from '../composables/useCars';
-import type { User } from 'firebase/auth';
+import { useUser } from '../composables/useUser';
+import { useBookings } from '../composables/useBookings';
 import DatePicker from '../components/DatePicker.vue';
 import EmptyState from '../components/EmptyState.vue';
 import ParkingSpot from '../components/ParkingSpot.vue';
 import BookingModal from '../components/BookingModal.vue';
 
-const user = inject<{ value: User | null }>('user');
-if (!user) {
-  throw new Error('User is required');
-}
-
-// Use computed to reactively access user
-const userValue = computed(() => {
-  if (!user.value) {
-    throw new Error('User is required');
-  }
-  return user.value;
-});
+const { userId } = useUser();
 
 const selectedDate = ref<string>(new Date().toISOString().slice(0, 10));
 const windowWidth = ref<number>(typeof window !== 'undefined' ? window.innerWidth : 1024);
-const bookingMap = ref<Record<string, Record<number, { id: string; licensePlate: string; name: string; userId: string }>>>({});
 
 // Use day view on mobile/tablet (< 1200px), week view on desktop (>= 1200px)
 const viewMode = computed<'day' | 'week'>(() => {
   return windowWidth.value >= 1200 ? 'week' : 'day';
 });
 
-let unSub: (() => void) | null = null;
-
 // Car management
-const { cars, loading: carsLoading } = useCars(userValue.value.uid);
+const { cars, loading: carsLoading } = useCars(userId.value);
 const selectedCarId = ref<string>('');
+
+// Booking management
+const {
+  bookingMap,
+  userHasBookingOnDate,
+  canCancel,
+  createBooking,
+  cancelBookingBySpot,
+  subscribeToDate,
+  subscribeToDateRange,
+} = useBookings();
 
 // Get week start (Monday) for a given date
 function getWeekStart(dateString: string): Date {
@@ -182,50 +174,17 @@ const weekDates = computed(() => {
 });
 
 function bindRealtime() {
-  if (unSub) unSub();
-  
   if (viewMode.value === 'day') {
     // Day view: query single date
-    const q = query(
-      collection(db, 'bookings'),
-      where('date', '==', selectedDate.value)
-    );
-    unSub = onSnapshot(q, (snap) => {
-      const map: Record<string, Record<number, { id: string; licensePlate: string; name: string; userId: string }>> = {};
-      const dayMap: Record<number, { id: string; licensePlate: string; name: string; userId: string }> = {};
-      snap.forEach((d) => {
-        const data = d.data() as any;
-        dayMap[data.spot] = { id: d.id, licensePlate: data.licensePlate, name: data.name || '', userId: data.userId };
-      });
-      map[selectedDate.value] = dayMap;
-      bookingMap.value = map;
-    });
+    subscribeToDate(selectedDate.value);
   } else {
     // Week view: query week range (Monday to Friday)
     const weekStart = weekDates.value[0]?.date;
     const weekEnd = weekDates.value[weekDates.value.length - 1]?.date;
     
-    if (!weekStart || !weekEnd) {
-      bookingMap.value = {};
-      return;
+    if (weekStart && weekEnd) {
+      subscribeToDateRange(weekStart, weekEnd);
     }
-    
-    const q = query(
-      collection(db, 'bookings'),
-      where('date', '>=', weekStart),
-      where('date', '<=', weekEnd)
-    );
-    unSub = onSnapshot(q, (snap) => {
-      const map: Record<string, Record<number, { id: string; licensePlate: string; name: string; userId: string }>> = {};
-      snap.forEach((d) => {
-        const data = d.data() as any;
-        if (!map[data.date]) {
-          map[data.date] = {};
-        }
-        map[data.date][data.spot] = { id: d.id, licensePlate: data.licensePlate, name: data.name || '', userId: data.userId };
-      });
-      bookingMap.value = map;
-    });
   }
 }
 
@@ -239,8 +198,7 @@ onMounted(() => {
   handleResize(); // Set initial width
 });
 
-onBeforeUnmount(() => { 
-  if (unSub) unSub();
+onBeforeUnmount(() => {
   window.removeEventListener('resize', handleResize);
 });
 
@@ -252,10 +210,7 @@ const bookingDate = ref<string>('');
 const formError = ref('');
 const saving = ref(false);
 
-const cancelling = ref(false);
 const cancelledBookingCache = ref<Record<string, Record<number, { id: string; licensePlate: string; name: string; userId: string }>>>({});
-
-const userName = computed(() => userValue.value.displayName || userValue.value.email || 'Användare');
 
 // Merge bookingMap with cancelled bookings that are still animating (for day view)
 const displayBookingMap = computed(() => {
@@ -289,12 +244,6 @@ const weekBookingMap = computed(() => {
 const selectedCar = computed(() => {
   return cars.value.find(car => car.id === selectedCarId.value);
 });
-
-// Check if user already has a booking on a given date
-function userHasBookingOnDate(date: string): boolean {
-  const dayBookings = bookingMap.value[date] || {};
-  return Object.values(dayBookings).some(booking => booking.userId === userValue.value.uid);
-}
 
 async function handleCarSelect(carId: string) {
   if (saving.value || !bookingSpot.value) return;
@@ -350,61 +299,9 @@ async function confirmBooking(spot?: number, directBooking = false, date?: strin
     return;
   }
   
-  const plate = selectedCar.value.licensePlate;
-  
   saving.value = true;
   try {
-    // Check if user already has a booking on this date
-    const userBookingQuery = query(
-      collection(db, 'bookings'),
-      where('date', '==', targetDate),
-      where('userId', '==', userValue.value.uid)
-    );
-    const userBookingSnapshot = await getDocs(userBookingQuery);
-    
-    if (!userBookingSnapshot.empty) {
-      formError.value = 'Du har redan en bokning denna dag. Du kan bara boka en plats per dag.';
-      saving.value = false;
-      // If direct booking failed, show modal so user can see the error
-      if (directBooking) {
-        bookingSpot.value = targetSpot;
-        bookingDate.value = targetDate;
-        return;
-      }
-      return;
-    }
-    
-    // Sista kontroll: Verifiera att platsen fortfarande är ledig
-    const existingQuery = query(
-      collection(db, 'bookings'),
-      where('date', '==', targetDate),
-      where('spot', '==', targetSpot)
-    );
-    const existingSnapshot = await getDocs(existingQuery);
-    
-    if (!existingSnapshot.empty) {
-      formError.value = 'Platsen är redan bokad. Vänligen välj en annan plats.';
-      saving.value = false;
-      // If direct booking failed, show modal so user can see the error
-      if (directBooking) {
-        bookingSpot.value = targetSpot;
-        bookingDate.value = targetDate;
-        return;
-      }
-      // Behåll formuläret öppet så användaren kan se felmeddelandet och välja en annan plats
-      // Formuläret stängs inte automatiskt - användaren kan klicka "Avbryt" när de vill
-      return;
-    }
-    
-    // Skapa bokningen
-    await addDoc(collection(db, 'bookings'), {
-      date: targetDate,
-      spot: targetSpot,
-      name: userName.value,
-      licensePlate: plate,
-      userId: userValue.value.uid,
-      createdAt: serverTimestamp(),
-    });
+    await createBooking(targetDate, targetSpot, selectedCar.value.licensePlate);
     
     // Only close form/modal if it was open (not direct booking)
     if (!directBooking) {
@@ -415,11 +312,7 @@ async function confirmBooking(spot?: number, directBooking = false, date?: strin
     }
   } catch (e: any) {
     console.error('Booking error:', e);
-    if (e?.code === 'permission-denied') {
-      formError.value = 'Du har inte behörighet att skapa bokningen.';
-    } else {
-      formError.value = 'Kunde inte spara bokningen. Försök igen.';
-    }
+    formError.value = e.message || 'Kunde inte spara bokningen. Försök igen.';
     // If direct booking failed, show modal so user can see the error
     if (directBooking) {
       bookingSpot.value = targetSpot;
@@ -428,13 +321,6 @@ async function confirmBooking(spot?: number, directBooking = false, date?: strin
   } finally {
     saving.value = false;
   }
-}
-
-function canCancel(date: string, spot: number) {
-  const booking = bookingMap.value[date]?.[spot];
-  if (!booking) return false;
-  // Users can only cancel their own bookings
-  return booking.userId === userValue.value.uid;
 }
 
 function confirmCancel(spot: number) {
@@ -452,7 +338,10 @@ function confirmCancelForDate(date: string, spot: number) {
   cancelledBookingCache.value[date][spot] = { ...booking };
   
   // Do async deletion
-  doCancel(booking.id);
+  cancelBookingBySpot(date, spot).catch((e) => {
+    console.error('Error cancelling booking:', e);
+    // swallow; UI will remain until snapshot updates
+  });
   
   // Clear cache after animation completes
   setTimeout(() => {
@@ -460,17 +349,6 @@ function confirmCancelForDate(date: string, spot: number) {
       delete cancelledBookingCache.value[date][spot];
     }
   }, 1000);
-}
-
-async function doCancel(bookingId: string) {
-  cancelling.value = true;
-  try {
-    await deleteDoc(doc(db, 'bookings', bookingId));
-  } catch (e) {
-    // swallow; UI will remain until snapshot updates
-  } finally {
-    cancelling.value = false;
-  }
 }
 </script>
 

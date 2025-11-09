@@ -46,47 +46,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, inject } from 'vue';
-import { db } from '../firebase';
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  deleteDoc,
-  doc,
-  Timestamp,
-} from 'firebase/firestore';
-import type { User } from 'firebase/auth';
+import { ref, computed, onMounted } from 'vue';
+import { useBookings, type Booking } from '../composables/useBookings';
 import EmptyState from '../components/EmptyState.vue';
 
-const user = inject<{ value: User | null }>('user');
-if (!user) {
-  throw new Error('User is required');
-}
+const {
+  bookings,
+  loading,
+  subscribeToUserBookings,
+  cancelBooking,
+} = useBookings();
 
-// Use computed to reactively access user
-const userValue = computed(() => {
-  if (!user.value) {
-    throw new Error('User is required');
-  }
-  return user.value;
-});
-
-interface Booking {
-  id: string;
-  date: string;
-  spot: number;
-  licensePlate: string;
-  name: string;
-  userId: string;
-  createdAt?: Timestamp;
-}
-
-const bookings = ref<Booking[]>([]);
-const loading = ref(true);
 const cancellingBookings = ref<Set<string>>(new Set());
-let unSub: (() => void) | null = null;
 
 const sortedBookings = computed(() => {
   return [...bookings.value].sort((a, b) => {
@@ -97,43 +68,6 @@ const sortedBookings = computed(() => {
     return a.spot - b.spot;
   });
 });
-
-
-function bindRealtime() {
-  if (unSub) unSub();
-  
-  const today = new Date().toISOString().slice(0, 10);
-  const q = query(
-    collection(db, 'bookings'),
-    where('userId', '==', userValue.value.uid),
-    where('date', '>=', today)
-  );
-  
-  unSub = onSnapshot(
-    q,
-    (snap) => {
-      const results: Booking[] = [];
-      snap.forEach((d) => {
-        const data = d.data();
-        results.push({
-          id: d.id,
-          date: data.date,
-          spot: data.spot,
-          licensePlate: data.licensePlate,
-          name: data.name || '',
-          userId: data.userId,
-          createdAt: data.createdAt,
-        });
-      });
-      bookings.value = results;
-      loading.value = false;
-    },
-    (error) => {
-      console.error('Error fetching bookings:', error);
-      loading.value = false;
-    }
-  );
-}
 
 function formatDateHeader(dateString: string): string {
   const date = new Date(dateString + 'T00:00:00');
@@ -198,7 +132,7 @@ async function doCancel(booking: Booking) {
   }, 1000);
   
   try {
-    await deleteDoc(doc(db, 'bookings', booking.id));
+    await cancelBooking(booking.id);
   } catch (e) {
     console.error('Error cancelling booking:', e);
     alert('Kunde inte avboka. Försök igen.');
@@ -208,9 +142,8 @@ async function doCancel(booking: Booking) {
   // when Firestore updates, so the component will unmount
 }
 
-onMounted(bindRealtime);
-onBeforeUnmount(() => {
-  if (unSub) unSub();
+onMounted(() => {
+  subscribeToUserBookings();
 });
 </script>
 
