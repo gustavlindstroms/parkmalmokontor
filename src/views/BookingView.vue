@@ -168,7 +168,7 @@ const weekDates = computed(() => {
     
     const dayNames = ['Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag', 'Söndag'];
     const dayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
-    const dateLabel = date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+    const dateLabel = date.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' }).replace(/\./g, '');
     
     dates.push({
       date: dateStr,

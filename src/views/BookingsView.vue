@@ -179,7 +179,7 @@ function formatDateShort(dateString: string): string {
   return date.toLocaleDateString('sv-SE', {
     day: 'numeric',
     month: 'short',
-  });
+  }).replace(/\./g, '');
 }
 
 function confirmCancel(booking: Booking) {

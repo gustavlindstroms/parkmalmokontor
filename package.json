@@ -20,6 +20,7 @@
     "deploy:prod:all": "node scripts/deploy.js production all"
   },
   "dependencies": {
+    "date-fns": "^4.1.0",
     "firebase": "^10.13.2",
     "lucide-vue-next": "^0.553.0",
     "vue": "^3.5.12",
