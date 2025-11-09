@@ -13,11 +13,11 @@
         v-for="spot in [1,2,3]"
         :key="spot"
         :spot="spot"
-        :booking="bookingMap[spot]"
+        :booking="displayBookingMap[spot]"
         :can-cancel="canCancel(spot)"
         :disabled="cars.length === 0"
         @book="startBooking"
-        @cancel="showCancelConfirm"
+        @cancel="confirmCancel"
       />
     </div>
 
@@ -42,14 +42,6 @@
       @close="closeForm"
     />
 
-    <CancelConfirmModal
-      :spot="cancelSpot"
-      :booking="cancelSpot ? bookingMap[cancelSpot] : null"
-      :formatted-date="formatDateWithWeekday(selectedDate)"
-      :cancelling="cancelling"
-      @confirm="confirmCancel"
-      @cancel="closeCancelConfirm"
-    />
   </div>
 </template>
 
@@ -67,7 +59,6 @@ import DatePicker from '../components/DatePicker.vue';
 import EmptyState from '../components/EmptyState.vue';
 import ParkingSpot from '../components/ParkingSpot.vue';
 import BookingModal from '../components/BookingModal.vue';
-import CancelConfirmModal from '../components/CancelConfirmModal.vue';
 
 const props = defineProps<{ user: User }>();
 
@@ -104,10 +95,15 @@ const bookingSpot = ref<number | null>(null);
 const formError = ref('');
 const saving = ref(false);
 
-const cancelSpot = ref<number | null>(null);
 const cancelling = ref(false);
+const cancelledBookingCache = ref<Record<number, { id: string; licensePlate: string; name: string; userId: string }>>({});
 
 const userName = computed(() => props.user.displayName || props.user.email || 'Användare');
+
+// Merge bookingMap with cancelled bookings that are still animating
+const displayBookingMap = computed(() => {
+  return { ...bookingMap.value, ...cancelledBookingCache.value };
+});
 
 const selectedCar = computed(() => {
   return cars.value.find(car => car.id === selectedCarId.value);
@@ -139,16 +135,6 @@ function closeForm() {
   bookingSpot.value = null;
   formError.value = '';
   selectedCarId.value = '';
-}
-
-function formatDateWithWeekday(dateStr: string): string {
-  const date = new Date(dateStr + 'T00:00:00');
-  const weekdays = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
-  const weekday = weekdays[date.getDay()];
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${weekday} ${year}-${month}-${day}`;
 }
 
 async function confirmBooking(spot?: number, directBooking = false) {
@@ -226,29 +212,32 @@ async function confirmBooking(spot?: number, directBooking = false) {
 }
 
 function canCancel(spot: number) {
-  const booking = bookingMap.value[spot];
+  const booking = displayBookingMap.value[spot];
   if (!booking) return false;
   // Users can only cancel their own bookings
   return booking.userId === props.user.uid;
 }
 
-function showCancelConfirm(spot: number) {
-  cancelSpot.value = spot;
-}
-
-function closeCancelConfirm() {
-  cancelSpot.value = null;
-}
-
-async function confirmCancel() {
-  if (!cancelSpot.value) return;
-  const booking = bookingMap.value[cancelSpot.value];
+function confirmCancel(spot: number) {
+  const booking = bookingMap.value[spot];
   if (!booking) return;
   
+  // Store booking in cache so it stays visible during animation
+  cancelledBookingCache.value[spot] = { ...booking };
+  
+  // Do async deletion
+  doCancel(booking.id);
+  
+  // Clear cache after animation completes
+  setTimeout(() => {
+    delete cancelledBookingCache.value[spot];
+  }, 1000);
+}
+
+async function doCancel(bookingId: string) {
   cancelling.value = true;
   try {
-    await deleteDoc(doc(db, 'bookings', booking.id));
-    closeCancelConfirm();
+    await deleteDoc(doc(db, 'bookings', bookingId));
   } catch (e) {
     // swallow; UI will remain until snapshot updates
   } finally {
