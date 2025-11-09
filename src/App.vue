@@ -15,11 +15,11 @@
     </aside>
 
     <!-- Main content area -->
-    <main class="flex-1 mx-auto md:mt-8 h-full flex flex-col">
+    <main class="flex-1 mx-auto md:mt-8 md:h-full flex flex-col">
       <header v-if="user" class="md:hidden flex-shrink-0">
         <UserMenu :user="user" :sidebar-mode="false" />
       </header>
-      <section class="flex-1 p-4 overflow-y-auto min-h-0">
+      <section class="flex-1 p-4 md:overflow-y-auto md:min-h-0 scrollable-content">
         <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
         <router-view v-else-if="!authLoading && user" />
       </section>

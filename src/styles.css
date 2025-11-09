@@ -12,19 +12,28 @@ html, body {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
-  /* Prevent body from scrolling - app container handles it */
-  overflow-y: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
 }
 
 #app {
   width: 100%;
-  /* Fallback for browsers that don't support dvh */
-  height: 100vh;
-  /* Use dynamic viewport height for mobile - accounts for browser UI */
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  #app {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+.scrollable-content {
+  overscroll-behavior-y: auto;
 }
 
 body {
