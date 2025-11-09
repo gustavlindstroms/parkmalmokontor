@@ -5,7 +5,7 @@
     <EmptyState
       v-if="!carsLoading && cars.length === 0"
       title="Kom igång med din första bokning"
-      message='Lägg till din bil genom att gå till menyn och välja "Hantera bilar". När du har lagt till en bil kan du börja boka parkeringsplatser här.'
+      message='Lägg till din bil genom att gå till menyn och välja "Mina bilar". När du har lagt till en bil kan du börja boka parkeringsplatser här.'
     />
 
     <!-- Day View -->

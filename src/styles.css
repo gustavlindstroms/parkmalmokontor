@@ -12,11 +12,19 @@ html, body {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
+  /* Prevent body from scrolling - app container handles it */
+  overflow-y: hidden;
 }
 
 #app {
-  height: 100%;
   width: 100%;
+  /* Fallback for browsers that don't support dvh */
+  height: 100vh;
+  /* Use dynamic viewport height for mobile - accounts for browser UI */
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 body {

@@ -1,6 +1,6 @@
 <template>
   <div class="space-y-4 max-w-md md:max-w-2xl mx-auto">
-    <h1 class="font-semibold text-xl">Hantera bilar</h1>
+    <h1 class="font-semibold text-xl">Mina bilar</h1>
 
     <!-- Add Car Form -->
     <div class="border-b border-gray-200 pb-4">

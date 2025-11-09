@@ -2,7 +2,7 @@
   <div class="fixed top-0 left-0 right-0 bottom-0 z-50 bg-black/50 flex items-center justify-center p-4 !mt-0" @click.self="close">
     <div class="bg-paper w-full max-w-md rounded-lg p-4 space-y-4 shadow-lg max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between">
-        <h2 class="font-semibold text-lg">Hantera bilar</h2>
+        <h2 class="font-semibold text-lg">Mina bilar</h2>
         <button
           @click="close"
           class="text-gray-500 hover:text-gray-700 transition-colors"

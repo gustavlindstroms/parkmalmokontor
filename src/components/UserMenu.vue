@@ -45,7 +45,7 @@
         :class="{ 'bg-gray-100': isActiveRoute('/cars') }"
       >
         <Car class="w-5 h-5" />
-        Hantera bilar
+        Mina bilar
       </button>
       <button
         @click="handleLogout"
@@ -122,7 +122,7 @@
           :class="{ 'bg-gray-100': isActiveRoute('/cars') }"
         >
           <Car class="w-6 h-6" />
-          <span class="font-medium">Hantera bilar</span>
+          <span class="font-medium">Mina bilar</span>
         </button>
       </nav>
       
