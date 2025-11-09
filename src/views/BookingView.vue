@@ -20,7 +20,7 @@
           :spot="spot"
           :booking="displayBookingMap[spot]"
           :can-cancel="canCancel(selectedDate, spot)"
-          :disabled="cars.length === 0"
+          :disabled="cars.length === 0 || userHasBookingOnDate(selectedDate)"
           @book="startBooking"
           @cancel="confirmCancel"
         />
@@ -61,7 +61,7 @@
                   :spot="spot"
                   :booking="weekBookingMap[day.date]?.[spot]"
                   :can-cancel="canCancel(day.date, spot)"
-                  :disabled="cars.length === 0"
+                  :disabled="cars.length === 0 || userHasBookingOnDate(day.date)"
                   :compact-cancel="true"
                   @book="(s) => startBookingForDate(day.date, s)"
                   @cancel="(s) => confirmCancelForDate(day.date, s)"
@@ -290,6 +290,12 @@ const selectedCar = computed(() => {
   return cars.value.find(car => car.id === selectedCarId.value);
 });
 
+// Check if user already has a booking on a given date
+function userHasBookingOnDate(date: string): boolean {
+  const dayBookings = bookingMap.value[date] || {};
+  return Object.values(dayBookings).some(booking => booking.userId === userValue.value.uid);
+}
+
 async function handleCarSelect(carId: string) {
   if (saving.value || !bookingSpot.value) return;
   selectedCarId.value = carId;
@@ -348,6 +354,26 @@ async function confirmBooking(spot?: number, directBooking = false, date?: strin
   
   saving.value = true;
   try {
+    // Check if user already has a booking on this date
+    const userBookingQuery = query(
+      collection(db, 'bookings'),
+      where('date', '==', targetDate),
+      where('userId', '==', userValue.value.uid)
+    );
+    const userBookingSnapshot = await getDocs(userBookingQuery);
+    
+    if (!userBookingSnapshot.empty) {
+      formError.value = 'Du har redan en bokning denna dag. Du kan bara boka en plats per dag.';
+      saving.value = false;
+      // If direct booking failed, show modal so user can see the error
+      if (directBooking) {
+        bookingSpot.value = targetSpot;
+        bookingDate.value = targetDate;
+        return;
+      }
+      return;
+    }
+    
     // Sista kontroll: Verifiera att platsen fortfarande är ledig
     const existingQuery = query(
       collection(db, 'bookings'),
