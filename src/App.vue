@@ -16,13 +16,10 @@
 
     <!-- Main content area -->
     <main class="flex-1 mx-auto md:mt-8 min-h-screen flex flex-col">
-      <header class="p-4 text-center font-semibold text-xl bg-paper text-black relative md:hidden">
-        Parkeringsbokning Malmö
-        <div v-if="user" class="absolute top-0 right-0 h-full flex items-center pr-4">
-          <UserMenu :user="user" :sidebar-mode="false" />
-        </div>
+      <header v-if="user" class="md:hidden">
+        <UserMenu :user="user" :sidebar-mode="false" />
       </header>
-      <section class="flex-1 p-4">
+      <section class="flex-1 p-4 overflow-y-auto min-h-0">
         <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
         <router-view v-else-if="!authLoading && user" />
       </section>

@@ -1,5 +1,5 @@
 <template>
-  <div class="space-y-4" :class="viewMode === 'day' ? 'md:max-w-2xl md:mx-auto' : ''">
+  <div class="flex flex-col min-h-0 space-y-4" :class="viewMode === 'day' ? 'md:max-w-2xl md:mx-auto' : ''">
     <DatePicker v-model="selectedDate" :week-mode="viewMode === 'week'" />
 
     <EmptyState
