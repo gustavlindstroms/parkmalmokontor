@@ -52,7 +52,6 @@
         Logga ut
       </button>
     </div>
-    <CarManagementModal v-if="showCarModal" :user="user" @close="showCarModal = false" />
   </div>
 </template>
 
@@ -62,7 +61,6 @@ import { useRouter } from 'vue-router';
 import { ChevronDown, LogOut, Car, Calendar } from 'lucide-vue-next';
 import { signOut } from '../firebase';
 import { useCars } from '../composables/useCars';
-import CarManagementModal from './CarManagementModal.vue';
 import type { User } from 'firebase/auth';
 
 const props = defineProps<{
@@ -71,7 +69,6 @@ const props = defineProps<{
 
 const router = useRouter();
 const menuOpen = ref(false);
-const showCarModal = ref(false);
 let clickOutsideHandler: ((event: MouseEvent) => void) | null = null;
 
 const { cars } = useCars(props.user.uid);
@@ -97,7 +94,7 @@ function handleViewBookings() {
 
 function handleManageCars() {
   menuOpen.value = false;
-  showCarModal.value = true;
+  router.push('/cars');
 }
 
 async function handleLogout() {
