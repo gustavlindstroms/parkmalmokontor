@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen flex">
     <!-- Sidebar for larger viewports -->
-    <aside v-if="user && !authLoading" class="hidden md:flex md:flex-col md:w-64 md:bg-paper md:border-r md:border-gray-200 md:min-h-screen">
+    <aside v-if="user && !authLoading" class="hidden md:flex md:flex-col md:w-64 md:bg-paper md:border-r md:border-gray-200 md:min-h-screen md:flex-shrink-0">
       <div class="p-4 border-b border-gray-200">
         <h1 class="font-semibold text-lg text-black">Parkeringsbokning Malmö</h1>
       </div>
@@ -15,7 +15,7 @@
     </aside>
 
     <!-- Main content area -->
-    <main class="flex-1 mx-auto max-w-md md:max-w-2xl md:mt-8 min-h-screen flex flex-col">
+    <main class="flex-1 mx-auto md:mt-8 min-h-screen flex flex-col">
       <header class="p-4 text-center font-semibold text-xl bg-paper text-black relative md:hidden">
         Parkeringsbokning Malmö
         <div v-if="user" class="absolute top-0 right-0 h-full flex items-center pr-4">

@@ -1,14 +1,6 @@
 <template>
-  <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="font-semibold text-xl">Hantera bilar</h1>
-      <router-link
-        to="/"
-        class="text-sm text-blue-600 hover:text-blue-800 underline"
-      >
-        Tillbaka till bokning
-      </router-link>
-    </div>
+  <div class="space-y-4 max-w-md md:max-w-2xl mx-auto">
+    <h1 class="font-semibold text-xl">Hantera bilar</h1>
 
     <!-- Add Car Form -->
     <div class="border-b border-gray-200 pb-4">

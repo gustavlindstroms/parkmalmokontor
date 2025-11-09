@@ -90,8 +90,17 @@
         <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
       </div>
       <button
+        @click="handleViewHome"
+        class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+        :class="{ 'bg-gray-100': isActiveRoute('/') }"
+      >
+        <Home class="w-4 h-4" />
+        Boka parkering
+      </button>
+      <button
         @click="handleViewBookings"
         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+        :class="{ 'bg-gray-100': isActiveRoute('/bookings') }"
       >
         <Calendar class="w-4 h-4" />
         Mina bokningar
@@ -99,6 +108,7 @@
       <button
         @click="handleManageCars"
         class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+        :class="{ 'bg-gray-100': isActiveRoute('/cars') }"
       >
         <Car class="w-4 h-4" />
         Hantera bilar

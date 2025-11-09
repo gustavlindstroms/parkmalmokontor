@@ -3,9 +3,9 @@
     <button
       type="button"
       class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[60px]"
-      @click="goToPreviousDay"
-      :disabled="isToday"
-      title="Föregående dag"
+      @click="goToPrevious"
+      :disabled="isToday && !weekMode"
+      :title="weekMode ? 'Föregående vecka' : 'Föregående dag'"
     >
       ←
     </button>
@@ -18,8 +18,8 @@
     <button
       type="button"
       class="px-4 py-2 border rounded hover:bg-gray-50 transition-colors min-w-[60px]"
-      @click="goToNextDay"
-      title="Nästa dag"
+      @click="goToNext"
+      :title="weekMode ? 'Nästa vecka' : 'Nästa dag'"
     >
       →
     </button>
@@ -31,6 +31,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
   modelValue: string;
+  weekMode?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -42,15 +43,27 @@ const isToday = computed(() => {
   return props.modelValue === today;
 });
 
-function goToPreviousDay() {
+function goToPrevious() {
   const date = new Date(props.modelValue);
-  date.setDate(date.getDate() - 1);
+  if (props.weekMode) {
+    // Go to previous week (7 days back)
+    date.setDate(date.getDate() - 7);
+  } else {
+    // Go to previous day
+    date.setDate(date.getDate() - 1);
+  }
   emit('update:modelValue', date.toISOString().slice(0, 10));
 }
 
-function goToNextDay() {
+function goToNext() {
   const date = new Date(props.modelValue);
-  date.setDate(date.getDate() + 1);
+  if (props.weekMode) {
+    // Go to next week (7 days forward)
+    date.setDate(date.getDate() + 7);
+  } else {
+    // Go to next day
+    date.setDate(date.getDate() + 1);
+  }
   emit('update:modelValue', date.toISOString().slice(0, 10));
 }
 </script>

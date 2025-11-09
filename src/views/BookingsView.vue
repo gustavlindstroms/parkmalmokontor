@@ -1,14 +1,6 @@
 <template>
-  <div class="space-y-4">
-    <div class="flex items-center justify-between">
-      <h1 class="text-2xl font-semibold">Mina framtida bokningar</h1>
-      <router-link
-        to="/"
-        class="text-sm text-blue-600 hover:text-blue-800 underline"
-      >
-        Tillbaka till bokning
-      </router-link>
-    </div>
+  <div class="space-y-4 max-w-md md:max-w-2xl mx-auto">
+    <h1 class="text-2xl font-semibold">Mina framtida bokningar</h1>
 
     <div v-if="loading" class="text-center py-8 text-gray-500">
       Laddar bokningar...
@@ -106,22 +98,6 @@ const sortedBookings = computed(() => {
   });
 });
 
-const groupedBookings = computed(() => {
-  const groups: Record<string, Booking[]> = {};
-  sortedBookings.value.forEach(booking => {
-    if (!groups[booking.date]) {
-      groups[booking.date] = [];
-    }
-    groups[booking.date].push(booking);
-  });
-  
-  return Object.keys(groups)
-    .sort()
-    .map(date => ({
-      date,
-      bookings: groups[date].sort((a, b) => a.spot - b.spot)
-    }));
-});
 
 function bindRealtime() {
   if (unSub) unSub();
