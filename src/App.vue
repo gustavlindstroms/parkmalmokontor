@@ -1,54 +1,56 @@
 <template>
-  <main class="mx-auto max-w-md min-h-screen flex flex-col">
-    <header class="p-4 bg-paper text-black flex items-center justify-between">
-      <span class="font-semibold text-xl">Parkeringsbokning Malmö</span>
-      <button
-        v-if="user"
-        class="px-3 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300 transition disabled:opacity-50"
-        :disabled="loggingOut"
-        @click="logout"
-      >
-        Logga ut
-      </button>
-    </header>
-    <section class="flex-1 p-4">
-      <LoginView v-if="!user" @logged-in="onLoggedIn" />
-      <BookingView v-else :user-id="user.uid" />
-    </section>
-    <div class="pb-4 px-4">
-      <a
-        href="https://kundportal.pmalmo.se/account?ReturnUrl=%2F"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="flex items-center justify-center gap-2 w-full p-3 rounded-lg border-2 border-gray-300 hover:border-primary hover:bg-gray-50 transition-colors"
-      >
-        <img src="/src/img/p_malmo_logo.png" alt="P-Malmö" class="h-6" />
-        <span class="text-sm font-medium text-gray-700">Till P-Malmös kundportal</span>
-      </a>
-    </div>
-    <footer class="mt-auto text-center text-xs text-gray-500 pt-2 pb-4 flex flex-col items-center gap-2">
-      <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
-      <span>© 2025</span>
-    </footer>
-  </main>
-  
+  <div class="h-full flex">
+    <!-- Sidebar for larger viewports -->
+    <aside v-if="user && !authLoading" class="hidden md:flex md:flex-col md:w-64 md:bg-paper md:border-r md:border-gray-200 md:h-full md:flex-shrink-0">
+      <div class="p-4 border-b border-gray-200">
+        <h1 class="font-semibold text-lg text-black">Parkeringsbokning Malmö</h1>
+      </div>
+      <div class="flex-1 p-4">
+        <UserMenu :user="user" :sidebar-mode="true" />
+      </div>
+      <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2 border-t border-gray-200">
+        <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
+        <span>© 2025</span>
+      </footer>
+    </aside>
+
+    <!-- Main content area -->
+    <main class="flex-1 mx-auto md:mt-8 md:h-full flex flex-col">
+      <header v-if="user" class="md:hidden flex-shrink-0">
+        <UserMenu :user="user" :sidebar-mode="false" />
+      </header>
+      <section class="flex-1 p-4 md:overflow-y-auto md:min-h-0 scrollable-content">
+        <LoginView v-if="!authLoading && !user" @logged-in="onLoggedIn" />
+        <router-view v-else-if="!authLoading && user" />
+      </section>
+      <footer class="mt-auto text-center text-xs text-gray-500 py-4 flex flex-col items-center gap-2 md:hidden flex-shrink-0">
+        <img src="/src/img/Forefront_logotype_black.png" alt="Forefront" class="h-6 rounded" />
+        <span>© 2025</span>
+      </footer>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, provide } from 'vue';
 import LoginView from './views/LoginView.vue';
-import BookingView from './views/BookingView.vue';
-import { watchAuth, signOutUser } from './firebase';
+import UserMenu from './components/UserMenu.vue';
+import { watchAuth } from './firebase';
+import type { User } from 'firebase/auth';
 
-const user = ref<{ uid: string } | null>(null);
-const loggingOut = ref(false);
+const user = ref<User | null>(null);
+const authLoading = ref(true);
 let unSub: (() => void) | null = null;
 
 onMounted(() => {
   unSub = watchAuth((u) => {
-    user.value = u ? { uid: u.uid } : null;
+    user.value = u;
+    authLoading.value = false;
   });
 });
+
+// Provide user to child components
+provide('user', user);
 
 onBeforeUnmount(() => {
   if (unSub) unSub();
