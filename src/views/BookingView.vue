@@ -138,6 +138,12 @@ const weekDates = computed(() => {
   return getWeekDates(selectedDate.value);
 });
 
+function openDatePicker() {
+  if (dateInput.value) {
+    dateInput.value.showPicker();
+  }
+}
+
 function bindRealtime() {
   if (viewMode.value === 'day') {
     // Day view: query single date
@@ -319,5 +325,3 @@ function confirmCancelForDate(date: string, spot: number) {
 
 <style scoped>
 </style>
-
-

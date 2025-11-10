@@ -59,9 +59,19 @@ onBeforeUnmount(() => {
 function onLoggedIn() {
   // no-op; auth watcher will update
 }
+
+async function logout() {
+  if (loggingOut.value) return;
+  loggingOut.value = true;
+  try {
+    await signOutUser();
+  } catch (e) {
+    console.error('Logout failed', e);
+  } finally {
+    loggingOut.value = false;
+  }
+}
 </script>
 
 <style scoped>
 </style>
-
-
