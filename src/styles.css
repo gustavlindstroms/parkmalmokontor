@@ -12,11 +12,28 @@ html, body {
   height: 100%;
   width: 100%;
   overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
 }
 
 #app {
-  height: 100%;
   width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  #app {
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+}
+
+.scrollable-content {
+  overscroll-behavior-y: auto;
 }
 
 body {
